@@ -2,16 +2,25 @@ import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tcontur_zone/screens/home/home_screen.dart';
 import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
-import 'package:tcontur_zone/services/notification.dart';
+import 'package:tcontur_zone/services/background.dart';
+//import 'package:tcontur_zone/services/notification.dart';
 
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initNotifications();
+  //await initNotifications();
+  await Permission.notification.isDenied.then((value) => {
+        if (value)
+          {
+            Permission.notification.request(),
+          }
+      });
+
   runApp(const MyApp());
   configLoading();
 }

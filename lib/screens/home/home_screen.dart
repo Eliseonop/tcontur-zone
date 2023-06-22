@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tcontur_zone/screens/home/pages/location/location_page.dart';
 import 'package:tcontur_zone/screens/home/pages/settings/settings_page.dart';
+import 'package:tcontur_zone/services/background.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -16,6 +17,16 @@ class HomeScreenState extends State<HomeScreen> {
     const MyLocationPage(),
     const MySettingPage(),
   ];
+  @override
+  void initState() {
+    super.initState();
+    initBackgroundService();
+  }
+
+  void initBackgroundService() async {
+    await initializeService();
+  }
+
 
   @override
   Widget build(BuildContext context) {

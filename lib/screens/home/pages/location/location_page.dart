@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:tcontur_zone/screens/home/pages/location/components/background_component.dart';
 import 'package:tcontur_zone/services/notification.dart';
 
 class MyLocationPage extends StatefulWidget {
@@ -79,16 +80,9 @@ class _MyLocationPageState extends State<MyLocationPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: determinePosition,
-              child: const Text('Obtener ubicación'),
-            ),
-            if (serviceEnabled && position != null) ...[
-              const SizedBox(height: 20),
-              Text('Latitud: ${position!.latitude}'),
-              Text('Longitud: ${position!.longitude}'),
+            ServiceControlWidget(),
             ],
-          ],
+
         ),
       ),
     );
