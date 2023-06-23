@@ -1,29 +1,31 @@
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tcontur_zone/screens/home/home_screen.dart';
 import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
-import 'package:tcontur_zone/services/background.dart';
-//import 'package:tcontur_zone/services/notification.dart';
 
-
-
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  //await initNotifications();
-  await Permission.notification.isDenied.then((value) => {
-        if (value)
-          {
-            Permission.notification.request(),
-          }
-      });
+  await requestNotificationPermission();
+
 
   runApp(const MyApp());
   configLoading();
 }
+
+Future<void> requestNotificationPermission() async {
+  if (await Permission.notification.isDenied) {
+    await Permission.notification.request();
+  }
+}
+
+
+
+
 
 void configLoading() {
   EasyLoading.instance
@@ -111,9 +113,9 @@ class SplashScreenState extends State<SplashScreen> {
         duration: 3000,
         animationDuration: const Duration(milliseconds: 3000),
         nextScreen:
-        WelcomeScreen(), // Puedes reemplazarlo con tu siguiente pantalla
+            WelcomeScreen(), // Puedes reemplazarlo con tu siguiente pantalla
         function: () => navigateToNextScreen(
             context) // Función que se ejecutará para pasar a la siguiente pantalla
-    );
+        );
   }
 }
