@@ -20,6 +20,7 @@ Future<void> initializeServiceBackGround() async {
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'my_foreground', // id
     'MY FOREGROUND SERVICE', // title
+    playSound: true,
     description:
         'This channel is used for important notifications.', // description
     importance: Importance.low, // importance must be at low or higher level
@@ -31,7 +32,7 @@ Future<void> initializeServiceBackGround() async {
   await flutterLocalNotificationsPlugin.initialize(
     const InitializationSettings(
         iOS: DarwinInitializationSettings(),
-        android: AndroidInitializationSettings('icon')),
+        android: AndroidInitializationSettings('ic_stat_logoandroid')),
   );
 
   await flutterLocalNotificationsPlugin
@@ -45,11 +46,11 @@ Future<void> initializeServiceBackGround() async {
       onStart: onStart,
 
       // auto start service
-      autoStart: false,
-      isForegroundMode: false,
 
+      autoStart: false,
+      isForegroundMode: true,
       notificationChannelId: 'my_foreground',
-      initialNotificationTitle: 'AWESOME SERVICE',
+      initialNotificationTitle: 'Serivicio de zona activo',
       initialNotificationContent: 'Initializing',
       foregroundServiceNotificationId: 888,
     ),
@@ -63,13 +64,11 @@ Future<void> initializeServiceBackGround() async {
       // you have to enable background fetch capability on xcode project
       onBackground: onIosBackground,
     ),
-
-
   );
 
- //if(!await service.isRunning()) {
-   //service.startService();
- //};
+  //if(!await service.isRunning()) {
+  //service.startService();
+  //};
 }
 
 // to ensure this is executed
@@ -97,7 +96,6 @@ void onStart(ServiceInstance service) async {
   // For flutter prior to version 3.0.0
   // We have to register the plugin manually
 
-
   /// OPTIONAL when use custom notification
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -114,47 +112,111 @@ void onStart(ServiceInstance service) async {
     service.on('stopService').listen((event) {
       service.stopSelf();
     });
-
   }
 
+  bool isCounterRunning = false;
+  int counter = 0;
+  Timer? counterTimer;
 
+  service.on('update').listen((event) {
+    final counterValue = event?['counter'] as int?;
+    if (counterValue != null) {
+      counter = counterValue;
+      print('Counter updated: $counter');
+    }
+  });
 
-  // bring to foreground
-  Timer.periodic(const Duration(seconds: 8), (timer) async {
+  if (service is AndroidServiceInstance) {
+    service.on('setAsForeground').listen((event) {
+      service.setAsForegroundService();
+    });
+    // service.setForegroundNotificationInfo(
+    //   title: "My App Service",
+    //   content: "Counter: $counter",
+    // );
+
+    service.on('setAsBackground').listen((event) {
+      service.setAsBackgroundService();
+    });
+
+    service.on('stopService').listen((event) {
+      service.stopSelf();
+    });
+  }
+
+  Timer.periodic(const Duration(seconds: 3), (timer) async {
+    if (!isCounterRunning) {
+      isCounterRunning = true;
+      counterTimer = timer;
+    }
+
+    counter++;
+
     if (service is AndroidServiceInstance) {
       if (await service.isForegroundService()) {
-        /// OPTIONAL for use custom notification
-        /// the notification id must be equals with AndroidConfiguration when you call configure() method.
+        // Actualizar la notificación con el contador
+        print('yes foreground service');
         flutterLocalNotificationsPlugin.show(
           888,
-          'COOL SERVICE',
-          'Awesome ${DateTime.now()}',
+          'SERVICE ZONE EJECCUTANDOSE',
+          'Counter: $counter',
           const NotificationDetails(
             android: AndroidNotificationDetails(
               'my_foreground',
               'MY FOREGROUND SERVICE',
-              icon: '@drawable/icon',
+              icon: 'icon',
               ongoing: true,
             ),
           ),
         );
 
+        //final imageUrl = 'assets/images/icon.png';
+        // showNotificationWithImage();
+        // service.setForegroundNotificationInfo(
+        //   title: "My App Service",
+        //   content:
+        //       "El servicio esta siendo ejecutado en primer plano: $counter",
+        // );
+
         // if you don't using custom notification, uncomment this
-        service.setForegroundNotificationInfo(
-          title: "My App Service",
-          content: "Updated at ${DateTime.now()}",
-        );
       }
     }
 
     /// you can see this log in logcat
-    print('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
+    print('FLUTTER BACKGROUND SERVICE: $counter');
 
     service.invoke(
       'update',
       {
-        "current_date": DateTime.now().toIso8601String(),
+        "counter": counter,
       },
     );
   });
 }
+
+// Future<void> showNotificationWithImage() async {
+//   final String imageUrl = 'assets/images/icon.png';
+
+//   final AndroidNotificationDetails androidPlatformChannelSpecifics =
+//       AndroidNotificationDetails(
+//     'channel_id',
+//     'Channel Name',
+//     importance: Importance.high,
+//     styleInformation: BigTextStyleInformation(
+//       'Mensaje de la notificación',
+//       htmlFormatContent: true,
+//       htmlFormatTitle: true,
+//       summaryText: 'Resumen de la notificación',
+//     ),
+//   );
+
+//   final NotificationDetails platformChannelSpecifics =
+//       NotificationDetails(android: androidPlatformChannelSpecifics);
+
+//   await FlutterLocalNotificationsPlugin().show(
+//     0,
+//     'Notificación con imagen',
+//     'Contenido de la notificación',
+//     platformChannelSpecifics,
+//   );
+// }

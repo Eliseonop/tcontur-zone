@@ -27,6 +27,7 @@ class _MyLocationComponentState extends State<MyLocationComponent> {
 
     print('linea 23 page location' + service.toString());
   }
+
   Future<void> requestLocationPermission() async {
     final bool permission = await Permission.locationWhenInUse.isDenied;
 
@@ -43,19 +44,17 @@ class _MyLocationComponentState extends State<MyLocationComponent> {
           print('linea 43 page location' + service.toString());
         } else {
           service.startService().then((value) => {
-
-
-            if(value){
-              print('linea 49 page location' + value.toString()),
-    FlutterBackgroundService().invoke("setAsForeground"),
-            }
-          });
-
+                service.invoke('expand'),
+                if (value)
+                  {
+                    print('linea 49 page location' + value.toString()),
+                    FlutterBackgroundService().invoke("setAsForeground"),
+                  }
+              });
         }
       }
     }
   }
-
 
   Future<void> viewServiceIsRunning() async {
     final service = FlutterBackgroundService();

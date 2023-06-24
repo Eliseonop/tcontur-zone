@@ -7,9 +7,9 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
-        android:label="tcontur_zone"
+        android:label="Tcontur Zone"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@drawable/icon">
         <activity
             android:name=".MainActivity"
             android:exported="true"
