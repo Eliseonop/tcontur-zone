@@ -12,7 +12,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await requestNotificationPermission();
 
-
   runApp(const MyApp());
   configLoading();
 }
@@ -22,10 +21,6 @@ Future<void> requestNotificationPermission() async {
     await Permission.notification.request();
   }
 }
-
-
-
-
 
 void configLoading() {
   EasyLoading.instance
@@ -50,17 +45,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Your App',
-      theme: ThemeData(
-          scaffoldBackgroundColor: Colors.white,
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            color: Colors.white,
-            elevation: 0,
-            iconTheme: IconThemeData(color: Colors.black),
-          ),
-          visualDensity: VisualDensity.adaptivePlatformDensity),
-      builder: EasyLoading.init(),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: Colors.blue,
+      ),
+      themeMode: ThemeMode.dark,
       home: const SplashScreen(),
     );
   }
@@ -74,48 +63,96 @@ class SplashScreen extends StatefulWidget {
 }
 
 class SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    navigateToNextScreen(context);
-  }
-
-  Future<void> navigateToNextScreen(context) async {
-    // await Future.delayed(const Duration(
-    //     seconds: 1)); // Retardo de 3 segundos (ajústalo según tus necesidades)
+  Future<bool> initializeApp() async {
+    await Future.delayed(const Duration(seconds: 4));
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
     String? user = prefs.getString('user');
     print(token);
     print(user);
-    if (token == null && user == null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => WelcomeScreen(),
-        ),
-      );
-    } else {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const HomeScreen(),
-        ),
-      );
-    }
+    return token != null && user != null;
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSplashScreen(
-        splash: Image.asset('assets/images/icon.png'),
-        splashTransition: SplashTransition.fadeTransition,
-        pageTransitionType: PageTransitionType.fade,
-        duration: 3000,
-        animationDuration: const Duration(milliseconds: 3000),
-        nextScreen:
-            WelcomeScreen(), // Puedes reemplazarlo con tu siguiente pantalla
-        function: () => navigateToNextScreen(
-            context) // Función que se ejecutará para pasar a la siguiente pantalla
-        );
+    return FutureBuilder<bool>(
+      future: initializeApp(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Muestra la animación de splash mientras se espera el resultado
+          return AnimatedSplashScreen(
+            splash: Image.asset('assets/images/icon.png'),
+            splashTransition: SplashTransition.fadeTransition,
+            pageTransitionType: PageTransitionType.fade,
+            duration: 3000,
+            animationDuration: const Duration(milliseconds: 3000),
+            nextScreen:
+                Container(), // Puedes reemplazarlo con tu siguiente pantalla// No es necesario definir una función vacía
+          );
+        } else if (snapshot.hasError) {
+          // Maneja el caso de error
+          return Text('Error: ${snapshot.error}');
+        } else {
+          // Navega a la pantalla correspondiente según el resultado
+          final bool isLoggedIn = snapshot.data!;
+          return isLoggedIn ? const HomeScreen() : WelcomeScreen();
+        }
+      },
+    );
   }
 }
+
+// class SplashScreen extends StatefulWidget {
+//   const SplashScreen({Key? key}) : super(key: key);
+
+//   @override
+//   SplashScreenState createState() => SplashScreenState();
+// }
+
+// class SplashScreenState extends State<SplashScreen> {
+//   @override
+//   void initState() {
+//     super.initState();
+//     navigateToNextScreen(context);
+//   }
+
+//   Future<void> navigateToNextScreen(context) async {
+//     // await Future.delayed(const Duration(
+//     //     seconds: 1)); // Retardo de 3 segundos (ajústalo según tus necesidades)
+
+//     final SharedPreferences prefs = await SharedPreferences.getInstance();
+//     String? token = prefs.getString('token');
+//     String? user = prefs.getString('user');
+//     print(token);
+//     print(user);
+//     if (token == null && user == null) {
+//       Navigator.of(context).push(
+//         MaterialPageRoute(
+//           builder: (context) => WelcomeScreen(),
+//         ),
+//       );
+//     } else {
+//       Navigator.of(context).push(
+//         MaterialPageRoute(
+//           builder: (context) => const HomeScreen(),
+//         ),
+//       );
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return AnimatedSplashScreen(
+//         splash: Image.asset('assets/images/icon.png'),
+//         splashTransition: SplashTransition.fadeTransition,
+//         pageTransitionType: PageTransitionType.fade,
+//         duration: 3000,
+//         animationDuration: const Duration(milliseconds: 3000),
+//         nextScreen:
+//             WelcomeScreen(), // Puedes reemplazarlo con tu siguiente pantalla
+//         function: () => navigateToNextScreen(
+//             context) // Función que se ejecutará para pasar a la siguiente pantalla
+//         );
+//   }
+// }
