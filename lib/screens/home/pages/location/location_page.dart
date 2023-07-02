@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class MyLocationComponent extends StatefulWidget {
@@ -17,48 +20,22 @@ class _MyLocationComponentState extends State<MyLocationComponent> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       viewServiceIsRunning();
-      requestLocationPermission();
     });
-    inUpdateBackgroundService();
-  }
-
-  void inUpdateBackgroundService() {
-    final service = FlutterBackgroundService().on('update');
-
-    print('linea 23 page location' + service.toString());
-  }
-
-  Future<void> requestLocationPermission() async {
-    final bool permission = await Permission.locationWhenInUse.isDenied;
-
-    // Si permission es false, mostrar una alerta que pida activar la ubicación.
-    if (permission) {
-      await Future.delayed(Duration(seconds: 5)); // Retraso de 5 segundos
-
-      final value = await Permission.locationWhenInUse.request();
-      if (value.isGranted) {
-        final service = FlutterBackgroundService();
-        // Obtener la ubicación actual y ejecutar el servicio en segundo plano
-        var isRunning = await service.isRunning();
-        if (isRunning) {
-          print('linea 43 page location' + service.toString());
-        } else {
-          service.startService().then((value) => {
-                service.invoke('expand'),
-                if (value)
-                  {
-                    print('linea 49 page location' + value.toString()),
-                    FlutterBackgroundService().invoke("setAsForeground"),
-                  }
-              });
-        }
-      }
-    }
   }
 
   Future<void> viewServiceIsRunning() async {
     final service = FlutterBackgroundService();
     bool isRunning = await service.isRunning();
+    final permissionStatus = await Permission.locationWhenInUse.status;
+
+    print('isRunning: $permissionStatus');
+    if (isRunning && permissionStatus.isGranted) {
+      final location = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      print('Location: $location');
+    }
+
     if (isRunning) {
       text = 'Stop Service';
     } else {
@@ -66,6 +43,9 @@ class _MyLocationComponentState extends State<MyLocationComponent> {
     }
     setState(() {});
   }
+
+  // hacer un print cada 2 minutos con control de errores
+  // Future<void> sendLocationRest() async {}
 
   @override
   Widget build(BuildContext context) {

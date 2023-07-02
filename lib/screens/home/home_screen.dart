@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:tcontur_zone/screens/home/pages/location/location_page.dart';
+import 'package:tcontur_zone/screens/home/pages/location/test_location.dart';
 import 'package:tcontur_zone/screens/home/pages/settings/settings_page.dart';
 import 'package:tcontur_zone/services/background.dart';
 
@@ -13,29 +14,60 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  bool _locationActive = false;
+  // bool _locationActive = false;
   final List<Widget> _screens = [
-    const MyLocationComponent(),
+    const GeolocatorApp(),
     const MySettingPage(),
   ];
   @override
   void initState() {
     super.initState();
-    requestLocationPermission();
-    initializeServiceBackGround();
+    checkLocationPermission();
+  }
+
+  Future<void> checkLocationPermission() async {
+    final permissionStatus = await Permission.locationWhenInUse.status;
+    if (permissionStatus.isDenied) {
+      // No se han otorgado permisos de ubicación
+      await requestLocationPermission();
+    } else {
+      // Se han otorgado permisos de ubicación
+      await initializeServiceBackGround();
+
+      // Puedes realizar las operaciones necesarias aquí
+    }
   }
 
   Future<void> requestLocationPermission() async {
-    if (await Permission.locationWhenInUse.isDenied) {
-      await Permission.locationWhenInUse.request().then((value) => {
-            if (value.isGranted)
-              {
-                setState(() {
-                  _locationActive = true;
-                }),
-              }
-          });
+    final permissionStatus = await Permission.locationWhenInUse.request();
+    if (permissionStatus.isDenied) {
+      // El usuario ha denegado el permiso de ubicación
+      showLocationPermissionDeniedNotification();
+    } else {
+      // El usuario ha otorgado el permiso de ubicación
+      initializeServiceBackGround();
+      // Puedes realizar las operaciones necesarias aquí
     }
+  }
+
+  void showLocationPermissionDeniedNotification() {
+    FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+        FlutterLocalNotificationsPlugin();
+    const AndroidNotificationDetails channelSpecifics =
+        AndroidNotificationDetails(
+      'location_permission_channel',
+      'Location Permission',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const NotificationDetails notificationDetails =
+        NotificationDetails(android: channelSpecifics);
+    flutterLocalNotificationsPlugin.show(
+      0,
+      'Permiso de ubicación denegado',
+      'Esta app necesita permisos de ubicación para funcionar correctamente.',
+      notificationDetails,
+    );
   }
 
   @override

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:tcontur_zone/auth/models/user_model.dart';
+import 'package:tcontur_zone/auth/models/user_response.dart';
 
 class AvatarComponent extends StatelessWidget {
-  final User user;
+  final UserRes user;
 
   const AvatarComponent({Key? key, required this.user}) : super(key: key);
 
@@ -20,7 +20,7 @@ class AvatarComponent extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Text(
-                user.firstName,
+                user.nombre ?? '',
                 style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -33,7 +33,7 @@ class AvatarComponent extends StatelessWidget {
             // backgroundColor:
             radius: 50,
             child: Text(
-              user.firstName.substring(0, 1).toUpperCase(),
+              user.nombre ?? '',
               style: const TextStyle(
                 fontSize: 40,
               ),
@@ -41,7 +41,7 @@ class AvatarComponent extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            '${user.firstName} ${user.email}',
+            '${user.nombre} ${user.email}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ],

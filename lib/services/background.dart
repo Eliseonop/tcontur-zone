@@ -5,13 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-// Future<void> main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await initializeService();
-//   runApp(const MyApp());
-// }
+import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
+import 'package:tcontur_zone/services/service_location.dart';
 
 Future<void> initializeServiceBackGround() async {
   final service = FlutterBackgroundService();
@@ -56,7 +52,7 @@ Future<void> initializeServiceBackGround() async {
     ),
     iosConfiguration: IosConfiguration(
       // auto start service
-      autoStart: true,
+      autoStart: false,
 
       // this will be executed when app is in foreground in separated isolate
       onForeground: onStart,
@@ -71,20 +67,12 @@ Future<void> initializeServiceBackGround() async {
   //};
 }
 
-// to ensure this is executed
 // run app from xcode, then from xcode menu, select Simulate Background Fetch
 
 @pragma('vm:entry-point')
 Future<bool> onIosBackground(ServiceInstance service) async {
   WidgetsFlutterBinding.ensureInitialized();
   DartPluginRegistrant.ensureInitialized();
-
-  // SharedPreferences preferences = await SharedPreferences.getInstance();
-  // await preferences.reload();
-  // final log = preferences.getStringList('log') ?? <String>[];
-  // log.add(DateTime.now().toIso8601String());
-  // await preferences.setStringList('log', log);
-
   return true;
 }
 
@@ -116,15 +104,6 @@ void onStart(ServiceInstance service) async {
 
   bool isCounterRunning = false;
   int counter = 0;
-  Timer? counterTimer;
-
-  service.on('update').listen((event) {
-    final counterValue = event?['counter'] as int?;
-    if (counterValue != null) {
-      counter = counterValue;
-      print('Counter updated: $counter');
-    }
-  });
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
@@ -147,7 +126,6 @@ void onStart(ServiceInstance service) async {
   Timer.periodic(const Duration(seconds: 3), (timer) async {
     if (!isCounterRunning) {
       isCounterRunning = true;
-      counterTimer = timer;
     }
 
     counter++;
@@ -169,54 +147,24 @@ void onStart(ServiceInstance service) async {
             ),
           ),
         );
-
-        //final imageUrl = 'assets/images/icon.png';
-        // showNotificationWithImage();
-        // service.setForegroundNotificationInfo(
-        //   title: "My App Service",
-        //   content:
-        //       "El servicio esta siendo ejecutado en primer plano: $counter",
-        // );
-
-        // if you don't using custom notification, uncomment this
       }
     }
+    //final imageUrl = 'assets/images/icon.png';
+    // showNotificationWithImage();
+    // service.setForegroundNotificationInfo(
+    //   title: "My App Service",
+    //   content:
+    //       "El servicio esta siendo ejecutado en primer plano: $counter",
+    // );
 
-    /// you can see this log in logcat
+    // if you don't using custom notification, uncomment this
+
+    // Enviar la ubicación utilizando el servicio LocationServiceUrbanito
+
+    // Resto del código...
+
+    // logica de envio de ubicacion:
+
     print('FLUTTER BACKGROUND SERVICE: $counter');
-
-    service.invoke(
-      'update',
-      {
-        "counter": counter,
-      },
-    );
   });
 }
-
-// Future<void> showNotificationWithImage() async {
-//   final String imageUrl = 'assets/images/icon.png';
-
-//   final AndroidNotificationDetails androidPlatformChannelSpecifics =
-//       AndroidNotificationDetails(
-//     'channel_id',
-//     'Channel Name',
-//     importance: Importance.high,
-//     styleInformation: BigTextStyleInformation(
-//       'Mensaje de la notificación',
-//       htmlFormatContent: true,
-//       htmlFormatTitle: true,
-//       summaryText: 'Resumen de la notificación',
-//     ),
-//   );
-
-//   final NotificationDetails platformChannelSpecifics =
-//       NotificationDetails(android: androidPlatformChannelSpecifics);
-
-//   await FlutterLocalNotificationsPlugin().show(
-//     0,
-//     'Notificación con imagen',
-//     'Contenido de la notificación',
-//     platformChannelSpecifics,
-//   );
-// }

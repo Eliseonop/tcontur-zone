@@ -7,12 +7,15 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tcontur_zone/screens/home/home_screen.dart';
 import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:tcontur_zone/services/service_location.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await requestNotificationPermission();
-
+  await dotenv.load(fileName: ".env");
   runApp(const MyApp());
+  LocationServiceUrbanito().checkLocationStatus();
   configLoading();
 }
 
@@ -71,7 +74,7 @@ class SplashScreenState extends State<SplashScreen> {
     String? user = prefs.getString('user');
     print(token);
     print(user);
-    return token != null && user != null;
+    return user != null;
   }
 
   @override

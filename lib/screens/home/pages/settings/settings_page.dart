@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tcontur_zone/auth/models/user_model.dart';
+import 'package:tcontur_zone/auth/models/user_response.dart';
 import 'package:tcontur_zone/screens/home/pages/settings/components/avatar_component.dart';
 import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
 
@@ -13,13 +13,13 @@ class MySettingPage extends StatefulWidget {
 }
 
 class _MySettingPageState extends State<MySettingPage> {
-  Future<User?> getUserFromSharedPreferences() async {
+  Future<UserRes?> getUserFromSharedPreferences() async {
     // await EasyLoading.show(status: 'loading...');
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString('user');
     if (userJson != null) {
       final userMap = jsonDecode(userJson) as Map<String, dynamic>;
-      final user = User.fromJson(userMap);
+      final user = UserRes.fromJson(userMap);
       return user;
     } else {
       return null;
@@ -42,7 +42,7 @@ class _MySettingPageState extends State<MySettingPage> {
     return Container(
       width: double.infinity,
       color: const Color(0x990066a9),
-      child: FutureBuilder<User?>(
+      child: FutureBuilder<UserRes?>(
         future: getUserFromSharedPreferences(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

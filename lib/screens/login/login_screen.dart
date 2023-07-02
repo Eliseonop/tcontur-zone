@@ -39,6 +39,7 @@ class LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (error) {
+      print('error 42 login' + error.toString());
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -176,16 +177,16 @@ class LoginScreenState extends State<LoginScreen> {
         ),
         child: isLoading
             ? const CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        )
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              )
             : const Text(
-          'Iniciar Sesión',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+                'Iniciar Sesión',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
   }
