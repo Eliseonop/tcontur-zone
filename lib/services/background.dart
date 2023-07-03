@@ -1,34 +1,29 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
-
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:intl/intl.dart';
-import 'package:tcontur_zone/services/service_location.dart';
 
 Future<void> initializeServiceBackGround() async {
   final service = FlutterBackgroundService();
-
-  /// OPTIONAL, using custom notification channel id
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'my_foreground', // id
     'MY FOREGROUND SERVICE', // title
-    playSound: true,
     description:
         'This channel is used for important notifications.', // description
     importance: Importance.low, // importance must be at low or higher level
+    playSound: false,
   );
-
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
 
   await flutterLocalNotificationsPlugin.initialize(
     const InitializationSettings(
-        iOS: DarwinInitializationSettings(),
-        android: AndroidInitializationSettings('ic_stat_logoandroid')),
+      android: AndroidInitializationSettings('icon'),
+    ),
   );
 
   await flutterLocalNotificationsPlugin
@@ -37,43 +32,18 @@ Future<void> initializeServiceBackGround() async {
       ?.createNotificationChannel(channel);
 
   await service.configure(
-    androidConfiguration: AndroidConfiguration(
-      // this will be executed when app is in foreground or background in separated isolate
-      onStart: onStart,
-
-      // auto start service
-
-      autoStart: false,
-      isForegroundMode: true,
-      notificationChannelId: 'my_foreground',
-      initialNotificationTitle: 'Serivicio de zona activo',
-      initialNotificationContent: 'Initializing',
-      foregroundServiceNotificationId: 888,
-    ),
-    iosConfiguration: IosConfiguration(
-      // auto start service
-      autoStart: false,
-
-      // this will be executed when app is in foreground in separated isolate
-      onForeground: onStart,
-
-      // you have to enable background fetch capability on xcode project
-      onBackground: onIosBackground,
-    ),
-  );
-
-  //if(!await service.isRunning()) {
-  //service.startService();
-  //};
-}
-
-// run app from xcode, then from xcode menu, select Simulate Background Fetch
-
-@pragma('vm:entry-point')
-Future<bool> onIosBackground(ServiceInstance service) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  DartPluginRegistrant.ensureInitialized();
-  return true;
+      androidConfiguration: AndroidConfiguration(
+        // this will be executed when app is in foreground or background in separated isolate
+        onStart: onStart,
+        // auto start servic
+        autoStart: false,
+        isForegroundMode: true,
+        notificationChannelId: 'my_foreground',
+        initialNotificationTitle: 'Serivicio de zona activo',
+        initialNotificationContent: 'Initializing',
+        foregroundServiceNotificationId: 888,
+      ),
+      iosConfiguration: IosConfiguration());
 }
 
 @pragma('vm:entry-point')
@@ -81,15 +51,13 @@ void onStart(ServiceInstance service) async {
   // Only available for flutter 3.0.0 and later
   DartPluginRegistrant.ensureInitialized();
 
-  // For flutter prior to version 3.0.0
-  // We have to register the plugin manually
-
-  /// OPTIONAL when use custom notification
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  // final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
+      print('EVENT 44 BACKGRUND SERVICE $event');
       service.setAsForegroundService();
     });
 
@@ -104,15 +72,19 @@ void onStart(ServiceInstance service) async {
 
   bool isCounterRunning = false;
   int counter = 0;
+  flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.getActiveNotifications()
+      .asStream()
+      .listen((event) {
+    print('EVENT 145 BACKGRUND SERVICE $event');
+  });
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
       service.setAsForegroundService();
     });
-    // service.setForegroundNotificationInfo(
-    //   title: "My App Service",
-    //   content: "Counter: $counter",
-    // );
 
     service.on('setAsBackground').listen((event) {
       service.setAsBackgroundService();
@@ -123,7 +95,7 @@ void onStart(ServiceInstance service) async {
     });
   }
 
-  Timer.periodic(const Duration(seconds: 3), (timer) async {
+  Timer.periodic(const Duration(seconds: 10), (timer) async {
     if (!isCounterRunning) {
       isCounterRunning = true;
     }
@@ -132,39 +104,33 @@ void onStart(ServiceInstance service) async {
 
     if (service is AndroidServiceInstance) {
       if (await service.isForegroundService()) {
-        // Actualizar la notificación con el contador
-        print('yes foreground service');
         flutterLocalNotificationsPlugin.show(
           888,
-          'SERVICE ZONE EJECCUTANDOSE',
+          'SERVICE ZONE EJECUTÁNDOSE',
           'Counter: $counter',
           const NotificationDetails(
             android: AndroidNotificationDetails(
-              'my_foreground',
-              'MY FOREGROUND SERVICE',
-              icon: 'icon',
-              ongoing: true,
-            ),
+                'my_foreground', 'MY FOREGROUND SERVICE',
+                icon: 'icon', ongoing: true, playSound: false),
           ),
+          payload: 'Counter: $counter',
         );
+
+        try {
+          final GeolocatorPlatform _geolocatorPlatform =
+              GeolocatorPlatform.instance;
+          final position = await _geolocatorPlatform.getCurrentPosition(
+            locationSettings: AndroidSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 10,
+            ),
+          );
+          debugPrint('FLUTTER BACKGROUND SERVICE POSITION: $position');
+        } catch (e) {
+          print('Error al obtener la ubicación: $e');
+        }
+        print('FLUTTER BACKGROUND SERVICE COUNTER: $counter');
       }
     }
-    //final imageUrl = 'assets/images/icon.png';
-    // showNotificationWithImage();
-    // service.setForegroundNotificationInfo(
-    //   title: "My App Service",
-    //   content:
-    //       "El servicio esta siendo ejecutado en primer plano: $counter",
-    // );
-
-    // if you don't using custom notification, uncomment this
-
-    // Enviar la ubicación utilizando el servicio LocationServiceUrbanito
-
-    // Resto del código...
-
-    // logica de envio de ubicacion:
-
-    print('FLUTTER BACKGROUND SERVICE: $counter');
   });
 }

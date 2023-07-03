@@ -7,21 +7,18 @@
 //   const AndroidInitializationSettings initializationSettingsAndroid =
 //       AndroidInitializationSettings('mipmap/ic_launcher');
 
-
 //   const InitializationSettings initializationSettings =
 //       InitializationSettings(android: initializationSettingsAndroid);
 
 //   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-
 // }
 
-// Future<void> showNotification(
-//     String title, String body, String payload) async {
+// Future<void> showNotification(String title, String body, String payload) async {
 //   const AndroidNotificationDetails androidPlatformChannelSpecifics =
 //       AndroidNotificationDetails(
 //     'channel_id',
-//     'channel_id',channelDescription:  'channel_description',
-
+//     'channel_id',
+//     channelDescription: 'channel_description',
 //     importance: Importance.max,
 //     priority: Priority.high,
 //     showWhen: false,
@@ -37,6 +34,4 @@
 //     platformChannelSpecifics,
 //     payload: payload,
 //   );
-
-
 // }

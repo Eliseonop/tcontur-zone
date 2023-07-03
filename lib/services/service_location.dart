@@ -1,27 +1,11 @@
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tcontur_zone/auth/models/user_response.dart';
 
 class LocationServiceUrbanito {
   final String? apiUrl = dotenv.env['API_URL_URBANITO'];
-
-
-  Future<void> checkLocationStatus() async {
-    GeolocatorPlatform.instance.checkPermission().then((value) {
-      print('Permission: $value');
-    });
-    final isEnable = await Geolocator.isLocationServiceEnabled();
-
-    Geolocator.getServiceStatusStream().listen((status) {
-      print('Status: $status');
-    });
-  }
-
-
-
 
   Future<void> sendLocationData(
       double latitude, double longitude, String timestamp) async {

@@ -13,20 +13,25 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+  // int _currentIndex = 0;
   // bool _locationActive = false;
-  final List<Widget> _screens = [
-    const GeolocatorApp(),
-    const MySettingPage(),
-  ];
+  // final List<Widget> _screens = [
+  //   const GeolocatorApp(),
+  //   const MySettingPage(),
+  // ];
   @override
   void initState() {
     super.initState();
+
+    // Permission.location.serviceStatus.asStream().listen((event) {
+    //   print('event: $event');
+    // });
     checkLocationPermission();
   }
 
   Future<void> checkLocationPermission() async {
     final permissionStatus = await Permission.locationWhenInUse.status;
+
     if (permissionStatus.isDenied) {
       // No se han otorgado permisos de ubicación
       await requestLocationPermission();
@@ -77,25 +82,14 @@ class HomeScreenState extends State<HomeScreen> {
         return false; // Evitar que se pueda regresar al presionar el botón de retroceso
       },
       child: Scaffold(
-        body: _screens[_currentIndex],
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.follow_the_signs),
-              label: 'Ubicación',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Perfil',
-            ),
-          ],
+        appBar: AppBar(
+          title: const Text('Tcontur Zone'),
+          centerTitle: true,
         ),
+        drawer: Drawer(
+          child: MySettingPage(),
+        ),
+        body: GeolocatorApp(),
       ),
     );
   }

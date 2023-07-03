@@ -8,14 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tcontur_zone/screens/home/home_screen.dart';
 import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:tcontur_zone/services/service_location.dart';
+// import 'package:tcontur_zone/services/service_location.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await requestNotificationPermission();
   await dotenv.load(fileName: ".env");
   runApp(const MyApp());
-  LocationServiceUrbanito().checkLocationStatus();
+  // LocationServiceUrbanito().checkLocationStatus();
   configLoading();
 }
 
@@ -105,57 +105,3 @@ class SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-
-// class SplashScreen extends StatefulWidget {
-//   const SplashScreen({Key? key}) : super(key: key);
-
-//   @override
-//   SplashScreenState createState() => SplashScreenState();
-// }
-
-// class SplashScreenState extends State<SplashScreen> {
-//   @override
-//   void initState() {
-//     super.initState();
-//     navigateToNextScreen(context);
-//   }
-
-//   Future<void> navigateToNextScreen(context) async {
-//     // await Future.delayed(const Duration(
-//     //     seconds: 1)); // Retardo de 3 segundos (ajústalo según tus necesidades)
-
-//     final SharedPreferences prefs = await SharedPreferences.getInstance();
-//     String? token = prefs.getString('token');
-//     String? user = prefs.getString('user');
-//     print(token);
-//     print(user);
-//     if (token == null && user == null) {
-//       Navigator.of(context).push(
-//         MaterialPageRoute(
-//           builder: (context) => WelcomeScreen(),
-//         ),
-//       );
-//     } else {
-//       Navigator.of(context).push(
-//         MaterialPageRoute(
-//           builder: (context) => const HomeScreen(),
-//         ),
-//       );
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return AnimatedSplashScreen(
-//         splash: Image.asset('assets/images/icon.png'),
-//         splashTransition: SplashTransition.fadeTransition,
-//         pageTransitionType: PageTransitionType.fade,
-//         duration: 3000,
-//         animationDuration: const Duration(milliseconds: 3000),
-//         nextScreen:
-//             WelcomeScreen(), // Puedes reemplazarlo con tu siguiente pantalla
-//         function: () => navigateToNextScreen(
-//             context) // Función que se ejecutará para pasar a la siguiente pantalla
-//         );
-//   }
-// }
