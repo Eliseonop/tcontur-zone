@@ -2,185 +2,147 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tcontur_zone/services/background.dart';
 
 class GeolocatorApp extends StatefulWidget {
   const GeolocatorApp({Key? key}) : super(key: key);
 
   @override
-  _GeolocatorAppState createState() => _GeolocatorAppState();
+  GeolocatorAppState createState() => GeolocatorAppState();
 }
 
-class _GeolocatorAppState extends State<GeolocatorApp> {
-  final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
-  StreamSubscription<ServiceStatus>? _serviceStatusStreamSubscription;
-  Position? _currentPosition;
-  LocationPermission _locationPermission = LocationPermission.values.last;
+class GeolocatorAppState extends State<GeolocatorApp> {
+  bool _isServiceRunning = false;
+  LocationPermission permision = LocationPermission.denied;
+  ServiceStatus serviceStatus = ServiceStatus.disabled;
 
   @override
   void initState() {
     super.initState();
-    _startLocationUpdates();
+    initializeServiceBackGround();
+    _checkServiceStatus();
 
-    final service = FlutterBackgroundService();
-
-    final locationPermissionStream =
-        _geolocatorPlatform.checkPermission().asStream();
-    // .map((status) => status == LocationPermission.always);
-    locationPermissionStream.listen((hasLocationPermission) {
+    Geolocator.checkPermission().asStream().listen((value) {
+      print('permision =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>: $value');
       setState(() {
-        _locationPermission = hasLocationPermission;
+        permision = value;
       });
+    });
 
-      if (_locationPermission == LocationPermission.denied) {
-        // Los permisos de ubicación fueron desactivados
-        // Puedes hacer algo aquí, como mostrar una notificación o detener el servicio.
-
-        print('Location permission revoked');
-      } else if (_locationPermission == LocationPermission.deniedForever) {
-        // Los permisos de ubicación fueron desactivados permanentemente
-        // Puedes hacer algo aquí, como mostrar una notificación o detener el servicio.
-        print('Location permission permanently revoked');
-      } else if (_locationPermission == LocationPermission.whileInUse ||
-          _locationPermission == LocationPermission.always) {
-        final shared = SharedPreferences.getInstance();
-        shared.then((value) {
-          if (value.getString('user') != null) {
-            service.startService();
-            service.invoke('setAsForeground');
-          }
-        });
-        // Los permisos de ubicación fueron activados
-        // Puedes hacer algo aquí, como iniciar el servicio o actualizar la ubicación.
-        // service.startService();
-        // service.invoke("setAsForeground");
-
-        print('Location permission granted');
-      }
+    Geolocator.getServiceStatusStream().listen((event) {
+      print('serviceStatus =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>: $event');
+      setState(() {
+        serviceStatus = event;
+      });
     });
   }
 
-  void _startLocationUpdates() {
-    _geolocatorPlatform.getServiceStatusStream().listen((event) {
-      print('Service status changed: $event');
-
-      if (event == ServiceStatus.enabled &&
-          _locationPermission == LocationPermission.always) {
-        Timer.periodic(const Duration(seconds: 10), (_) {
-          if (event == ServiceStatus.enabled &&
-              _locationPermission == LocationPermission.always) {
-            _getCurrentLocation();
-          }
-        });
-      } else {
-        print('Service status changed: $event');
-      }
-    });
-  }
-
-  Future<void> _getCurrentLocation() async {
-    try {
-      final position = await _geolocatorPlatform.getCurrentPosition(
-        locationSettings: AndroidSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
-      );
-      setState(() {
-        _currentPosition = position;
-      });
-    } catch (e) {
-      print('Error al obtener la ubicación: $e');
-    }
-  }
-
-  Future<void> _requestLocationPermission() async {
-    final permission = await _geolocatorPlatform.requestPermission();
-    // if (permission == LocationPermission.deniedForever) {
-    //   // Los permisos de ubicación fueron denegados permanentemente
-    //   // Puedes hacer algo aquí, como mostrar un mensaje de error o redirigir al usuario a la configuración de la aplicación.
-    print('Location permission permanently denied $permission');
-    // } else {
+  Future<void> _checkServiceStatus() async {
+    final isRunning = await FlutterBackgroundService().isRunning();
     setState(() {
-      _locationPermission = permission;
+      _isServiceRunning = isRunning;
     });
   }
 
-  @override
-  void dispose() {
-    _serviceStatusStreamSubscription?.cancel();
-    super.dispose();
+  Future<void> _startService() async {
+    await FlutterBackgroundService().startService();
+    setState(() {
+      _isServiceRunning = true;
+    });
   }
 
-  Future<void> activateUbicacion() async {
-    _geolocatorPlatform.getServiceStatusStream().listen((event) {
-      if (event == ServiceStatus.disabled) {
-        Geolocator.openLocationSettings();
-        print('Servicio desactivado');
-      } else if (event == ServiceStatus.enabled) {
-        print('Servicio activado');
-      }
+  Future<void> _stopService() async {
+    FlutterBackgroundService().invoke('stopService');
+    setState(() {
+      _isServiceRunning = false;
     });
+  }
+
+  Future<void> activateUbication() async {
+    final referend = Geolocator.openLocationSettings();
+
+    referend.then((value) {
+      setState(() {});
+    });
+  }
+
+  Future<void> requestPermission() async {
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      await Geolocator.requestPermission().then((value) async {
+        final permission = await Geolocator.checkPermission();
+        setState(() {
+          permision = permission;
+        });
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Geolocator App',
-      home: StreamBuilder<ServiceStatus>(
-        stream: _geolocatorPlatform.getServiceStatusStream(),
-        initialData: ServiceStatus.disabled,
-        builder: (context, snapshot) {
-          final serviceStatus = snapshot.data;
-          final isLocationServiceEnabled =
-              serviceStatus == ServiceStatus.enabled;
-
-          return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (!isLocationServiceEnabled)
-                    Column(
-                      children: [
-                        const Text(
-                          'Los servicios de ubicación están desactivados.',
-                          textAlign: TextAlign.center,
-                        ),
-                        ElevatedButton(
-                          onPressed: activateUbicacion,
-                          child: const Text('Activar Ubicación'),
-                        ),
-                      ],
-                    )
-                  else if (_locationPermission ==
-                          LocationPermission.deniedForever ||
-                      _locationPermission == LocationPermission.denied)
-                    Column(
-                      children: [
-                        const Text(
-                          'Los permisos de ubicación están denegados permanentemente.',
-                          textAlign: TextAlign.center,
-                        ),
-                        ElevatedButton(
-                          onPressed: _requestLocationPermission,
-                          child: const Text('Volver a pedir permisos'),
-                        ),
-                      ],
-                    )
-                  else if (_currentPosition != null)
-                    Text(
-                      'Latitude: ${_currentPosition!.latitude}\n'
-                      'Longitude: ${_currentPosition!.longitude}',
-                      textAlign: TextAlign.center,
-                    )
-                  else
-                    const CircularProgressIndicator(),
-                ],
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              StreamBuilder<ServiceStatus>(
+                stream: Geolocator.getServiceStatusStream(),
+                initialData: serviceStatus,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData &&
+                      snapshot.data == ServiceStatus.disabled) {
+                    return ElevatedButton(
+                      onPressed: () async {
+                        await activateUbication();
+                      },
+                      child: Text('Activar Ubicación Precisa'),
+                    );
+                  } else {
+                    return SizedBox.shrink();
+                  }
+                },
               ),
-            ),
-          );
-        },
+              StreamBuilder<LocationPermission>(
+                stream: Geolocator.checkPermission().asStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData &&
+                      (snapshot.data == LocationPermission.denied ||
+                          snapshot.data == LocationPermission.deniedForever)) {
+                    return ElevatedButton(
+                      onPressed: () async {
+                        await requestPermission();
+                      },
+                      child: Text('Activar Permisos'),
+                    );
+                  } else {
+                    return SizedBox.shrink();
+                  }
+                },
+              ),
+              if (_isServiceRunning)
+                TextButton(
+                  onPressed: _stopService,
+                  child: Text('Desactivar servicio'),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Color(0xffffffff),
+                  ),
+                ),
+              if (!_isServiceRunning)
+                TextButton(
+                  onPressed: _startService,
+                  child: Text('Activar servicio'),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Color(0xffffffff),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

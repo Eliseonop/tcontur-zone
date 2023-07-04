@@ -1,9 +1,8 @@
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tcontur_zone/screens/home/home_screen.dart';
 import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
@@ -17,11 +16,28 @@ Future<void> main() async {
   runApp(const MyApp());
   // LocationServiceUrbanito().checkLocationStatus();
   configLoading();
+
+  // final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+  //     FlutterLocalNotificationsPlugin();
+
+  // flutterLocalNotificationsPlugin
+  //     .getNotificationAppLaunchDetails()
+  //     .asStream()
+  //     .listen((event) {
+  //   print(
+  //       'event =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>' +
+  //           event.toString());
+  //   if (event?.didNotificationLaunchApp ?? false) {
+  //     print('didNotificationLaunchApp');
+  //   }
+  // });
 }
 
 Future<void> requestNotificationPermission() async {
-  if (await Permission.notification.isDenied) {
-    await Permission.notification.request();
+  final permision = await Geolocator.checkPermission();
+  if (permision == LocationPermission.denied ||
+      permision == LocationPermission.deniedForever) {
+    await Geolocator.requestPermission();
   }
 }
 
