@@ -140,7 +140,7 @@ class LoginScreenState extends State<LoginScreen> {
           height: 50,
           child: TextFormField(
             controller: passwordController,
-            keyboardType: TextInputType.emailAddress,
+            keyboardType: TextInputType.visiblePassword,
             style: const TextStyle(
               color: Colors.black87,
             ),

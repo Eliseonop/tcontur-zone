@@ -1,5 +1,9 @@
+// import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/material.dart';
+import 'package:tcontur_zone/screens/home/pages/location/my_wkm.dart';
+// import 'package:tcontur_zone/screens/home/pages/location/test_bg_fetch.dart';
 import 'package:tcontur_zone/screens/home/pages/location/test_location.dart';
+// import 'package:tcontur_zone/screens/home/pages/location/location_page.dart';
 import 'package:tcontur_zone/screens/home/pages/settings/settings_page.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,13 +27,14 @@ class HomeScreenState extends State<HomeScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Colors.indigoAccent,
           title: const Text('Tcontur Zone'),
           centerTitle: true,
         ),
         drawer: const Drawer(
           child: MySettingPage(),
         ),
-        body: const GeolocatorApp(),
+        body: ExamplePage(),
       ),
     );
   }

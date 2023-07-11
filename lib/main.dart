@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -5,16 +7,19 @@ import 'package:geolocator/geolocator.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tcontur_zone/screens/home/home_screen.dart';
-import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
+// import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-// import 'package:tcontur_zone/services/service_location.dart';
+import 'package:tcontur_zone/screens/login/login_screen.dart';
+import 'package:tcontur_zone/services/notification.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await requestNotificationPermission();
+  await initNotifications();
   await dotenv.load(fileName: ".env");
   runApp(const MyApp());
   // LocationServiceUrbanito().checkLocationStatus();
+//   BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
   configLoading();
 
   // final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -115,7 +120,7 @@ class SplashScreenState extends State<SplashScreen> {
         } else {
           // Navega a la pantalla correspondiente según el resultado
           final bool isLoggedIn = snapshot.data!;
-          return isLoggedIn ? const HomeScreen() : WelcomeScreen();
+          return isLoggedIn ? const HomeScreen() : const LoginScreen();
         }
       },
     );

@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tcontur_zone/auth/models/user_response.dart';
 import 'package:tcontur_zone/screens/home/pages/settings/components/avatar_component.dart';
-import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
+import 'package:tcontur_zone/screens/login/login_screen.dart';
+// import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
 
 class MySettingPage extends StatefulWidget {
   const MySettingPage({super.key});
@@ -28,11 +30,13 @@ class _MySettingPageState extends State<MySettingPage> {
   }
 
   Future<void> logout(context) async {
+    FlutterBackgroundService().invoke('stopService');
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user');
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => WelcomeScreen(),
+        builder: (context) => const LoginScreen(),
       ),
     );
   }
@@ -40,8 +44,21 @@ class _MySettingPageState extends State<MySettingPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xff5f6d8e),
+            Color(0xff4b5a75),
+            Color(0xff374a66),
+            Color(0xff263449),
+          ],
+          stops: [0.1, 0.4, 0.7, 0.9],
+        ),
+      ),
       width: double.infinity,
-      color: const Color(0x990066a9),
+      // color: const Color(0x990066a9),
       child: FutureBuilder<UserRes?>(
         future: getUserFromSharedPreferences(),
         builder: (context, snapshot) {

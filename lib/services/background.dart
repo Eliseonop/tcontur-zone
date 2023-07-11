@@ -1,9 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tcontur_zone/auth/models/user_response.dart';
+import 'package:tcontur_zone/services/service_location.dart';
 
 Future<void> initializeServiceBackGround() async {
   final service = FlutterBackgroundService();
@@ -32,16 +37,16 @@ Future<void> initializeServiceBackGround() async {
 
   await service.configure(
       androidConfiguration: AndroidConfiguration(
-        // this will be executed when app is in foreground or background in separated isolate
-        onStart: onStart,
-        // auto start servic
-        autoStart: false,
-        isForegroundMode: true,
-        notificationChannelId: 'my_foreground',
-        initialNotificationTitle: 'Serivicio de zona activo',
-        initialNotificationContent: 'Initializing',
-        foregroundServiceNotificationId: 888,
-      ),
+          // this will be executed when app is in foreground or background in separated isolate
+          onStart: onStart,
+          // auto start servic
+          autoStart: false,
+          isForegroundMode: true,
+          notificationChannelId: 'my_foreground',
+          initialNotificationTitle: 'Serivicio de zona activo',
+          initialNotificationContent: 'Iniciando Servicio...',
+          foregroundServiceNotificationId: 888,
+          autoStartOnBoot: false),
       iosConfiguration: IosConfiguration());
 
   // service.startService();
@@ -82,37 +87,27 @@ void onStart(ServiceInstance service) async {
     print('EVENT 145 BACKGRUND SERVICE $event');
   });
 
-  if (service is AndroidServiceInstance) {
-    service.on('setAsForeground').listen((event) {
-      service.setAsForegroundService();
-    });
+  service.on('stopService').listen((event) async {
+    flutterLocalNotificationsPlugin.cancelAll();
+    await flutterLocalNotificationsPlugin.show(
+      888,
+      'Servicio finalizado',
+      '¡gracias por confiar en nosotros!',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+            'my_foreground', 'MY FOREGROUND SERVICE',
+            ongoing: false),
+      ),
+    );
 
-    service.on('setAsBackground').listen((event) {
-      service.setAsBackgroundService();
-    });
-
-    service.on('stopService').listen((event) {
-      flutterLocalNotificationsPlugin.cancelAll();
-      flutterLocalNotificationsPlugin.show(
-        888,
-        'Stop service zone',
-        'body',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-              'my_foreground', 'MY FOREGROUND SERVICE',
-              ongoing: false),
-        ),
-      );
-
-      service.stopSelf();
-    });
-    Geolocator.checkPermission().asStream().listen((hasLocationPermission) {
-      print('hasLocationPermission 25: $hasLocationPermission');
-    });
-    Geolocator.getServiceStatusStream().listen((event) {
-      print('event 28: $event');
-    });
-  }
+    service.stopSelf();
+  });
+  Geolocator.checkPermission().asStream().listen((hasLocationPermission) {
+    print('hasLocationPermission 25: $hasLocationPermission');
+  });
+  Geolocator.getServiceStatusStream().listen((event) {
+    print('event 28: $event');
+  });
 
   Timer.periodic(const Duration(seconds: 10), (timer) async {
     if (!isCounterRunning) {
@@ -176,6 +171,36 @@ void onStart(ServiceInstance service) async {
           }
         } else {
           // Get the current position and show it in a notification.
+          final prefs = await SharedPreferences.getInstance();
+          final userJson = prefs.getString('user');
+          if (userJson != null) {
+            final user = UserRes.fromJson(json.decode(userJson));
+            print('user 117: $user');
+            try {
+              Position position = await _geolocatorPlatform.getCurrentPosition(
+                  locationSettings:
+                      AndroidSettings(accuracy: LocationAccuracy.best));
+
+              print('position 117: $position');
+
+              DateTime now = DateTime.now();
+              String formattedDate =
+                  DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+              LocationServiceUrbanito locationServiceUrbanito =
+                  LocationServiceUrbanito();
+              await locationServiceUrbanito.sendLocationData(
+                position.latitude,
+                position.longitude,
+                formattedDate,
+              );
+            } catch (e) {
+              print('error 204: $e');
+            }
+          } else {
+            // print('user 119: null');
+            // ir a login
+            FlutterBackgroundService().invoke('stopService');
+          }
           try {
             Position position = await _geolocatorPlatform.getCurrentPosition(
                 locationSettings:
@@ -191,8 +216,15 @@ void onStart(ServiceInstance service) async {
                     'my_foreground', 'MY FOREGROUND SERVICE',
                     ongoing: true),
               ),
-              payload: '${position.latitude}, ${position.longitude}',
             );
+            // DateTime now = DateTime.now();
+            // String formattedDate =
+            //     DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+            // await LocationServiceUrbanito().sendLocationData(
+            //   position.latitude,
+            //   position.longitude,
+            //   formattedDate,
+            // );
           } catch (e) {
             bool isLocationServiceEnabled =
                 await Geolocator.isLocationServiceEnabled();
