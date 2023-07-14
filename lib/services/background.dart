@@ -1,39 +1,58 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:ui';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tcontur_zone/auth/models/user_response.dart';
+import 'package:http/http.dart' as http;
+// import 'package:tcontur_zone/services/notification.dart';
 import 'package:tcontur_zone/services/service_location.dart';
 
-Future<void> initializeServiceBackGround() async {
-  final service = FlutterBackgroundService();
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'my_foreground', // id
-    'MY FOREGROUND SERVICE', // title
-    description:
-        'This channel is used for important notifications.', // description
-    importance: Importance.low, // importance must be at low or higher level
-    playSound: false,
-    enableVibration: false,
-  );
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+const String myChanelId = 'channel_id';
+const String myChanelName = 'channel_name';
 
-  await flutterLocalNotificationsPlugin.initialize(
-    const InitializationSettings(
-      android: AndroidInitializationSettings('icon'),
-    ),
+Future<void> initNotifications() async {
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('drawable/icon');
+
+  const InitializationSettings initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid);
+  void onDidReceiveNotificationResponse(
+      NotificationResponse notificationResponse) async {
+    final String? payload = notificationResponse.payload;
+    if (notificationResponse.payload != null) {
+      print('notification payload: $payload');
+    }
+  }
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
+      onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    myChanelId,
+    myChanelName,
+    importance: Importance.low,
+    enableVibration: false,
+    playSound: false,
   );
 
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
+  // await flutterLocalNotificationsPlugin
+}
+
+Future<void> initializeServiceBackGround() async {
+  final service = FlutterBackgroundService();
+  await initNotifications();
 
   await service.configure(
       androidConfiguration: AndroidConfiguration(
@@ -41,11 +60,11 @@ Future<void> initializeServiceBackGround() async {
           onStart: onStart,
           // auto start servic
           autoStart: false,
-          isForegroundMode: true,
-          notificationChannelId: 'my_foreground',
+          isForegroundMode: true, // default is false
+          notificationChannelId: myChanelId,
           initialNotificationTitle: 'Serivicio de zona activo',
           initialNotificationContent: 'Iniciando Servicio...',
-          foregroundServiceNotificationId: 888,
+          foregroundServiceNotificationId: 999,
           autoStartOnBoot: false),
       iosConfiguration: IosConfiguration());
 
@@ -57,8 +76,6 @@ void onStart(ServiceInstance service) async {
   // Only available for flutter 3.0.0 and later
   DartPluginRegistrant.ensureInitialized();
 
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
 
   if (service is AndroidServiceInstance) {
@@ -78,25 +95,16 @@ void onStart(ServiceInstance service) async {
 
   bool isCounterRunning = false;
   int counter = 0;
-  flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.getActiveNotifications()
-      .asStream()
-      .listen((event) {
-    print('EVENT 145 BACKGRUND SERVICE $event');
-  });
 
   service.on('stopService').listen((event) async {
     flutterLocalNotificationsPlugin.cancelAll();
     await flutterLocalNotificationsPlugin.show(
       888,
       'Servicio finalizado',
-      '¡gracias por confiar en nosotros!',
+      '¡Gracias por confiar en nosotros!',
       const NotificationDetails(
-        android: AndroidNotificationDetails(
-            'my_foreground', 'MY FOREGROUND SERVICE',
-            ongoing: false),
+        android: AndroidNotificationDetails(myChanelId, 'MY FOREGROUND SERVICE',
+            priority: Priority.low, playSound: false, ongoing: false),
       ),
     );
 
@@ -109,7 +117,7 @@ void onStart(ServiceInstance service) async {
     print('event 28: $event');
   });
 
-  Timer.periodic(const Duration(seconds: 10), (timer) async {
+  Timer.periodic(const Duration(seconds: 30), (timer) async {
     if (!isCounterRunning) {
       isCounterRunning = true;
     }
@@ -117,136 +125,166 @@ void onStart(ServiceInstance service) async {
     counter++;
 
     if (service is AndroidServiceInstance) {
-      if (await service.isForegroundService()) {
-        flutterLocalNotificationsPlugin.show(
-          888,
-          'SERVICE ZONE EJECUTÁNDOSE',
-          'Counter: $counter',
-          const NotificationDetails(
-            android: AndroidNotificationDetails(
-                'my_foreground', 'MY FOREGROUND SERVICE',
-                ongoing: true),
-          ),
-        );
+      // if (await service.isForegroundService()) {
+      flutterLocalNotificationsPlugin.show(
+        888,
+        'SERVICE ZONE EJECUTÁNDOSE',
+        'Counter: $counter',
+        payload: 'este es mi contador zdddzdz: $counter',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(myChanelId, myChanelName,
+              priority: Priority.low,
+              playSound: false,
+              enableVibration: false,
+              ongoing: true),
+        ),
+      );
 
-        // Check the location permission status and the location services status.
-        LocationPermission permission = await Geolocator.checkPermission();
+      service.setForegroundNotificationInfo(
+        title: "My App Service",
+        content: "Updated at ${DateTime.now()}",
+      );
+      // Check the location permission status and the location services status.
+      LocationPermission permission = await Geolocator.checkPermission();
 
-        /// The line `bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();` is
-        /// checking whether the location services are enabled on the device.
+      /// The line `bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();` is
+      /// checking whether the location services are enabled on the device.
+
+      bool isLocationServiceEnabled =
+          await Geolocator.isLocationServiceEnabled();
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever ||
+          !isLocationServiceEnabled) {
+        // Show a notification if the location permission has been revoked or the location services are disabled.
+        if (!isLocationServiceEnabled) {
+          flutterLocalNotificationsPlugin.show(
+            999,
+            'Ubicación desactivada',
+            'Por favor, active el servicio de ubicación.',
+            const NotificationDetails(
+              android: AndroidNotificationDetails(myChanelId, myChanelName,
+                  priority: Priority.low, ongoing: true),
+            ),
+          );
+          if (permission == LocationPermission.denied ||
+              permission == LocationPermission.deniedForever) {
+            flutterLocalNotificationsPlugin.show(
+              9993,
+              'Permiso de ubicación denegado',
+              'Por favor, otorgue los permisos necesarios.',
+              const NotificationDetails(
+                android: AndroidNotificationDetails(
+                    priority: Priority.low,
+                    progress: 100,
+                    myChanelId,
+                    myChanelName,
+                    playSound: false,
+                    ongoing: true),
+              ),
+            );
+          }
+        }
+      } else {
+        // Get the current position and show it in a notification.
+        final Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high);
+//       //  LocationServiceUrbanito().sendLocationData(latitude, longitude, timestamp)
+
+        final timeStamp = getFormattedTimestamp();
+
+        final prefs = await SharedPreferences.getInstance();
+        final userJson = prefs.getString('user');
+        // if (userJson != null) {
+        //   final user = UserRes.fromJson(json.decode(userJson));
+        //   final token = user.token;
+
+        //   print('token: $token');
+        //   print('position: $position');
+        //   print('timeStamp: $timeStamp');
+        //   await dotenv.load();
+        //   if (dotenv.env.containsKey('API_URL_LASFLORES')) {
+        //     // final apiUrl = dotenv.env['API_URL_LASFLORES'];
+
+        //     final String urlFinal =
+        //         '${dotenv.env['API_URL_LASFLORES']}/api/inspecciones/update_position';
+
+        //     final response = await LocationServiceUrbanito().sendLocationData(
+        //         position.latitude,
+        //         position.longitude,
+        //         timeStamp,
+        //         token!,
+        //         urlFinal);
+
+        //     final respuesta = json.decode(response.body);
+        //     if (response.statusCode == 200) {
+        //       flutterLocalNotificationsPlugin.show(
+        //         999,
+        //         'Ubicación enviada',
+        //         'Ubicación enviada $respuesta.',
+        //         payload: ' payload ok ddd $respuesta',
+        //         const NotificationDetails(
+        //           android: AndroidNotificationDetails(
+        //               priority: Priority.low,
+        //               progress: 100,
+        //               myChanelId,
+        //               myChanelName,
+        //               playSound: false,
+        //               ongoing: true),
+        //         ),
+        //       );
+        //     } else {
+        //       print('Error al enviar ubicación $respuesta');
+        //       flutterLocalNotificationsPlugin.show(
+        //         999,
+        //         'Error al enviar ubicación',
+        //         'Error al enviar ubicación.',
+        //         const NotificationDetails(
+        //           android: AndroidNotificationDetails(
+        //               priority: Priority.low,
+        //               progress: 100,
+        //               myChanelId,
+        //               myChanelName,
+        //               playSound: false,
+        //               ongoing: true),
+        //         ),
+        //       );
+        //     }
+        //   } else {
+        //     print(
+        //         'No se encontró la variable API_URL_URBANITO en el archivo .env.');
+        //   }
+        // } else {
+        //   // print('user 119: null');
+        //   // ir a login
+        //   FlutterBackgroundService().invoke('stopService');
+        // }
 
         bool isLocationServiceEnabled =
             await Geolocator.isLocationServiceEnabled();
-
-        if (permission == LocationPermission.denied ||
-            permission == LocationPermission.deniedForever ||
-            !isLocationServiceEnabled) {
-          // Show a notification if the location permission has been revoked or the location services are disabled.
-          if (!isLocationServiceEnabled) {
-            flutterLocalNotificationsPlugin.show(
-              999,
-              'Ubicación desactivada',
-              'Por favor, active el servicio de ubicación.',
-              const NotificationDetails(
-                android: AndroidNotificationDetails(
-                    'my_foreground', 'MY FOREGROUND SERVICE',
-                    ongoing: true),
-              ),
-            );
-            if (permission == LocationPermission.denied ||
-                permission == LocationPermission.deniedForever) {
-              flutterLocalNotificationsPlugin.show(
-                9993,
-                'Permiso de ubicación denegado',
-                'Por favor, otorgue los permisos necesarios.',
-                const NotificationDetails(
-                  android: AndroidNotificationDetails(
-                      progress: 100,
-                      'my_foreground',
-                      'MY FOREGROUND SERVICE',
-                      ongoing: true),
-                ),
-              );
-            }
-          }
-        } else {
-          // Get the current position and show it in a notification.
-          final prefs = await SharedPreferences.getInstance();
-          final userJson = prefs.getString('user');
-          if (userJson != null) {
-            final user = UserRes.fromJson(json.decode(userJson));
-            print('user 117: $user');
-            try {
-              Position position = await _geolocatorPlatform.getCurrentPosition(
-                  locationSettings:
-                      AndroidSettings(accuracy: LocationAccuracy.best));
-
-              print('position 117: $position');
-
-              DateTime now = DateTime.now();
-              String formattedDate =
-                  DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
-              LocationServiceUrbanito locationServiceUrbanito =
-                  LocationServiceUrbanito();
-              await locationServiceUrbanito.sendLocationData(
-                position.latitude,
-                position.longitude,
-                formattedDate,
-              );
-            } catch (e) {
-              print('error 204: $e');
-            }
-          } else {
-            // print('user 119: null');
-            // ir a login
-            FlutterBackgroundService().invoke('stopService');
-          }
-          try {
-            Position position = await _geolocatorPlatform.getCurrentPosition(
-                locationSettings:
-                    AndroidSettings(accuracy: LocationAccuracy.best));
-
-            print('position 117: $position');
-            flutterLocalNotificationsPlugin.show(
-              999,
-              'Ubicación actual',
-              'Latitud: ${position.latitude}, Longitud: ${position.longitude}',
-              const NotificationDetails(
-                android: AndroidNotificationDetails(
-                    'my_foreground', 'MY FOREGROUND SERVICE',
-                    ongoing: true),
-              ),
-            );
-            // DateTime now = DateTime.now();
-            // String formattedDate =
-            //     DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
-            // await LocationServiceUrbanito().sendLocationData(
-            //   position.latitude,
-            //   position.longitude,
-            //   formattedDate,
-            // );
-          } catch (e) {
-            bool isLocationServiceEnabled =
-                await Geolocator.isLocationServiceEnabled();
-            if (isLocationServiceEnabled) {
-              flutterLocalNotificationsPlugin.show(
-                999,
-                'Ubicación desactivada',
-                'Por favor, active ubicación de alta precisión.',
-                const NotificationDetails(
-                  android: AndroidNotificationDetails(
-                      'my_foreground', 'MY FOREGROUND SERVICE',
-                      ongoing: true),
-                ),
-              );
-            }
-
-            print('isLocationServiceEnabled 128: $isLocationServiceEnabled');
-            print(e);
-            print('e 119: $e');
-          }
+        if (!isLocationServiceEnabled) {
+          flutterLocalNotificationsPlugin.show(
+            999,
+            'Ubicación desactivada',
+            'Por favor, active ubicación de alta precisión.',
+            const NotificationDetails(
+              android: AndroidNotificationDetails(myChanelId, myChanelName,
+                  ongoing: true),
+            ),
+          );
         }
+
+        print('isLocationServiceEnabled 128: $isLocationServiceEnabled');
+        print(e);
+        print('e 119: $e');
       }
+      // }
     }
   });
+}
+
+String getFormattedTimestamp() {
+  final now = DateTime.now();
+  final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+  return formatter.format(now);
 }

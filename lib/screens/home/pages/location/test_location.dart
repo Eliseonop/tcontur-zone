@@ -19,7 +19,7 @@ class GeolocatorAppState extends State<GeolocatorApp> {
   @override
   void initState() {
     super.initState();
-    initializeServiceBackGround();
+    // initializeServiceBackGround();
     checkServiceBackgroundStatus();
     checkPermissionStatus();
     checkServiceLocationStatus();
@@ -28,6 +28,11 @@ class GeolocatorAppState extends State<GeolocatorApp> {
       setState(() {
         serviceStatus = event;
       });
+    });
+
+    FlutterBackgroundService().isRunning().asStream().listen((event) {
+      print('event =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>' +
+          event.toString());
     });
   }
 
@@ -67,6 +72,10 @@ class GeolocatorAppState extends State<GeolocatorApp> {
 
   Future<void> _startService() async {
     await FlutterBackgroundService().startService();
+
+    // FlutterBackgroundService().invoke('setAsBackground');
+    // FlutterBackgroundService().invoke('setAsForeground');
+
     setState(() {
       _isServiceRunning = true;
     });
@@ -191,7 +200,7 @@ class GeolocatorAppState extends State<GeolocatorApp> {
         child: Column(
           children: [
             Text(
-              'Estado del servicio:',
+              'Estado del servicio de ubicacion:',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.black,

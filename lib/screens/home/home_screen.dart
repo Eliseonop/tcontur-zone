@@ -1,6 +1,6 @@
 // import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/material.dart';
-import 'package:tcontur_zone/screens/home/pages/location/my_wkm.dart';
+// import 'package:tcontur_zone/screens/home/pages/location/forent_component.dart';
 // import 'package:tcontur_zone/screens/home/pages/location/test_bg_fetch.dart';
 import 'package:tcontur_zone/screens/home/pages/location/test_location.dart';
 // import 'package:tcontur_zone/screens/home/pages/location/location_page.dart';
@@ -19,6 +19,14 @@ class HomeScreenState extends State<HomeScreen> {
     super.initState();
   }
 
+  Future<void> goComprobate(context) async {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const GeolocatorApp(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -34,7 +42,11 @@ class HomeScreenState extends State<HomeScreen> {
         drawer: const Drawer(
           child: MySettingPage(),
         ),
-        body: ExamplePage(),
+        body: SingleChildScrollView(
+          child: Container(
+            child: Text('Home Screen'),
+          ),
+        ),
       ),
     );
   }

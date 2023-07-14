@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:tcontur_zone/auth/models/user_response.dart';
 
 class AuthService {
-  String? urlApi = dotenv.env['API_URL_URBANITO'];
+  String? urlApi = dotenv.env['API_URL_LASFLORES'];
   UserRes? _user;
 
   UserRes? get user => _user;

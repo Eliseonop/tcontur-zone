@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tcontur_zone/auth/models/user_response.dart';
+import 'package:tcontur_zone/screens/home/pages/location/test_location.dart';
 import 'package:tcontur_zone/screens/home/pages/settings/components/avatar_component.dart';
 import 'package:tcontur_zone/screens/login/login_screen.dart';
-// import 'package:tcontur_zone/screens/welcome/welcome_screen.dart';
 
 class MySettingPage extends StatefulWidget {
-  const MySettingPage({super.key});
+  const MySettingPage({Key? key}) : super(key: key);
 
   @override
   State<MySettingPage> createState() => _MySettingPageState();
@@ -16,7 +16,6 @@ class MySettingPage extends StatefulWidget {
 
 class _MySettingPageState extends State<MySettingPage> {
   Future<UserRes?> getUserFromSharedPreferences() async {
-    // await EasyLoading.show(status: 'loading...');
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString('user');
     if (userJson != null) {
@@ -26,7 +25,6 @@ class _MySettingPageState extends State<MySettingPage> {
     } else {
       return null;
     }
-    // await EasyLoading.dismiss();
   }
 
   Future<void> logout(context) async {
@@ -37,6 +35,14 @@ class _MySettingPageState extends State<MySettingPage> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const LoginScreen(),
+      ),
+    );
+  }
+
+  Future<void> goComprobate(context) async {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const GeolocatorApp(),
       ),
     );
   }
@@ -58,7 +64,6 @@ class _MySettingPageState extends State<MySettingPage> {
         ),
       ),
       width: double.infinity,
-      // color: const Color(0x990066a9),
       child: FutureBuilder<UserRes?>(
         future: getUserFromSharedPreferences(),
         builder: (context, snapshot) {
@@ -70,27 +75,53 @@ class _MySettingPageState extends State<MySettingPage> {
             final data = snapshot.data!;
             return Scaffold(
               backgroundColor: const Color(0x990066a9),
-              body: Column(
+              body: Stack(
                 children: [
-                  const SizedBox(height: 40),
-                  AvatarComponent(user: data),
-                  const SizedBox(height: 40),
-                  SizedBox(
-                    width: 200,
-                    child: TextButton(
-                      onPressed: () {
-                        logout(context);
-                      },
-                      style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStateProperty.all(Colors.blue[300]),
-                        alignment: Alignment.center,
-                        padding: MaterialStateProperty.all(
-                          const EdgeInsets.symmetric(vertical: 20),
+                  Column(
+                    children: [
+                      const SizedBox(height: 40),
+                      AvatarComponent(user: data),
+                      const SizedBox(height: 40),
+                      SizedBox(
+                        width: 200,
+                        child: TextButton(
+                          onPressed: () {
+                            goComprobate(context);
+                          },
+                          style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.all(Colors.blue[300]),
+                            alignment: Alignment.center,
+                            padding: MaterialStateProperty.all(
+                              const EdgeInsets.symmetric(vertical: 20),
+                            ),
+                          ),
+                          child: const Text("Comprobar Estado",
+                              style: TextStyle(color: Colors.white)),
                         ),
                       ),
-                      child: const Text("Logout",
-                          style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                  Positioned(
+                    bottom: 20,
+                    right: 20,
+                    child: SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          logout(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(30)),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.logout,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ],

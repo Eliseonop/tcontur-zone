@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,8 +16,9 @@ import 'package:tcontur_zone/services/notification.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await requestNotificationPermission();
-  await initNotifications();
-  await dotenv.load(fileName: ".env");
+  // await initNotifications();
+  await dotenv.load();
+
   runApp(const MyApp());
   // LocationServiceUrbanito().checkLocationStatus();
 //   BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
@@ -97,6 +99,18 @@ class SplashScreenState extends State<SplashScreen> {
     print(user);
     return user != null;
   }
+
+  FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  // await Navigator.push(
+  //   context,
+  //   MaterialPageRoute<void>(builder: (context) => SecondScreen(payload)),
+  // );
 
   @override
   Widget build(BuildContext context) {
