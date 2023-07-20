@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:tcontur_zone/services/background.dart';
 
@@ -20,10 +21,11 @@ class GeolocatorAppState extends State<GeolocatorApp> {
   void initState() {
     super.initState();
     // initializeServiceBackGround();
+    initializeServiceBackGround();
     checkServiceBackgroundStatus();
     checkPermissionStatus();
     checkServiceLocationStatus();
-
+    requestPermission();
     Geolocator.getServiceStatusStream().listen((event) {
       setState(() {
         serviceStatus = event;
@@ -48,14 +50,35 @@ class GeolocatorAppState extends State<GeolocatorApp> {
     setState(() {
       serviceStatus =
           isServiceEnabled ? ServiceStatus.enabled : ServiceStatus.disabled;
+
+      if (serviceStatus == ServiceStatus.disabled) {
+        flutterLocalNotificationsPlugin.show(
+          999,
+          'Ubicación desactivada',
+          'Por favor, active el servicio de ubicación.',
+          const NotificationDetails(
+            android: AndroidNotificationDetails(myChanelId, myChanelName,
+                priority: Priority.low, ongoing: false),
+          ),
+        );
+      }
     });
   }
 
   Future<void> requestPermission() async {
-    final permissionStatus = await Geolocator.requestPermission();
-    setState(() {
-      permission = permissionStatus;
-    });
+    if (permission == LocationPermission.denied) {
+      final permissionStatus = await Geolocator.requestPermission();
+      setState(() {
+        permission = permissionStatus;
+      });
+    } else if (permission == LocationPermission.deniedForever) {
+      await Geolocator.openAppSettings();
+
+      final permissionStatus = await Geolocator.requestPermission();
+      setState(() {
+        permission = permissionStatus;
+      });
+    }
   }
 
   Future<void> activateLocation() async {
@@ -73,8 +96,8 @@ class GeolocatorAppState extends State<GeolocatorApp> {
   Future<void> _startService() async {
     await FlutterBackgroundService().startService();
 
-    // FlutterBackgroundService().invoke('setAsBackground');
-    // FlutterBackgroundService().invoke('setAsForeground');
+    FlutterBackgroundService().invoke('setAsBackground');
+    FlutterBackgroundService().invoke('setAsForeground');
 
     setState(() {
       _isServiceRunning = true;
@@ -90,28 +113,30 @@ class GeolocatorAppState extends State<GeolocatorApp> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           const SizedBox(height: 20.0),
-          ElevatedButton(
-            onPressed: () {
-              checkPermissionStatus();
-              checkServiceLocationStatus();
-            },
-            child: Text('Comprobar estado'),
+          // TextButton(
+          //   onPressed: () {
+          //     checkPermissionStatus();
+          //     checkServiceLocationStatus();
+          //   },
+          //   child: Text('Comprobar Servicios'),
+          // ),
+          const SizedBox(height: 20.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildPermissionsCard(size),
+              _buildServiceStatusCard(size),
+            ],
           ),
-          _buildPermissionsCard(),
           SizedBox(height: 20.0),
-          _buildServiceStatusCard(),
           SizedBox(height: 20.0),
           if (_isServiceRunning)
-            // _buildActionButton(
-            //   onPressed: _stopService,
-            //   label: 'Desactivar servicio',
-
-            // ),
             TextButton(
               onPressed: _stopService,
               child: const Icon(Icons.pause),
@@ -121,10 +146,6 @@ class GeolocatorAppState extends State<GeolocatorApp> {
                   iconColor: Colors.yellow),
             ),
           if (!_isServiceRunning)
-            // _buildActionButton(
-            //   onPressed: _startService,
-            //   label: 'Activar servicio',
-            // ),
             TextButton(
               onPressed: _startService,
               child: const Icon(Icons.play_arrow),
@@ -138,107 +159,118 @@ class GeolocatorAppState extends State<GeolocatorApp> {
     );
   }
 
-  Widget _buildPermissionsCard() {
-    return Card(
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      color: Colors.indigoAccent,
-      child: Padding(
-        padding: const EdgeInsets.all(25.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Text(
-              'Estado de los permisos:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            Text(
-              permission == LocationPermission.denied
-                  ? 'Denegado'
+  Widget _buildPermissionsCard(Size size) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        GestureDetector(
+          onTap: () {
+            requestPermission();
+          },
+          child: Container(
+            height: size.height * 0.125,
+            width: size.width * 0.23,
+            decoration: BoxDecoration(
+              color: permission == LocationPermission.denied
+                  ? Colors.orange
                   : permission == LocationPermission.deniedForever
-                      ? 'Denegado para siempre'
+                      ? Colors.red
                       : permission == LocationPermission.whileInUse
-                          ? 'Mientras se usa la aplicación'
+                          ? Colors.yellow
                           : permission == LocationPermission.always
-                              ? 'Siempre'
-                              : 'Desconocido',
-              style: TextStyle(fontStyle: FontStyle.italic),
+                              ? Colors.greenAccent
+                              : Colors.grey.shade400,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                // BoxShadow(
+                //   color: Colors.grey.shade100,
+                //   blurRadius: 30,
+                //   offset: Offset(5, 5),
+                // ),
+              ],
             ),
-            if (permission == LocationPermission.denied ||
-                permission == LocationPermission.deniedForever)
-              TextButton(
-                onPressed: requestPermission,
-                child: Text('Activar Permisos'),
-                style: ButtonStyle(
-                  shadowColor: MaterialStateProperty.all(Colors.black),
-                  backgroundColor: MaterialStateProperty.all(Colors.cyan),
-                  foregroundColor: MaterialStateProperty.all(
-                    Color(0xffffffff),
-                  ),
-                ),
-              ),
-          ],
+            child: Icon(
+              Icons.location_on,
+              color: Colors.black,
+              size: 45,
+            ),
+          ),
         ),
-      ),
+        SizedBox(height: size.height * 0.025),
+        Text(
+          permission == LocationPermission.denied
+              ? 'Denegado'
+              : permission == LocationPermission.deniedForever
+                  ? 'Denegado para siempre'
+                  : permission == LocationPermission.whileInUse
+                      ? 'Mientras se usa la aplicación'
+                      : permission == LocationPermission.always
+                          ? 'Siempre'
+                          : 'Desconocido',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            // fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildServiceStatusCard() {
-    return Card(
-      elevation: 2.0,
-      color: Colors.indigoAccent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(25.0),
-        child: Column(
-          children: [
-            Text(
-              'Estado del servicio de ubicacion:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
+  Widget _buildServiceStatusCard(Size size) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () {
+            // requestPermission();
+            activateLocation();
+          },
+          child: Container(
+            height: size.height * 0.125,
+            width: size.width * 0.23,
+            decoration: BoxDecoration(
+              color: serviceStatus == ServiceStatus.disabled
+                  ? Colors.red
+                  : serviceStatus == ServiceStatus.enabled
+                      ? Colors.greenAccent
+                      : Colors.grey.shade400,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                // BoxShadow(
+                //   color: Colors.grey.shade100,
+                //   blurRadius: 30,
+                //   offset: Offset(5, 5),
+                // ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                serviceStatus == ServiceStatus.disabled
-                    ? 'Desactivado'
-                    : serviceStatus == ServiceStatus.enabled
-                        ? 'Activado'
-                        : 'Desconocido',
-                style: TextStyle(fontStyle: FontStyle.italic),
-              ),
+            child: Icon(
+              Icons.map,
+              color: Colors.black,
+              size: 45,
             ),
-            if (serviceStatus == ServiceStatus.disabled)
-              ElevatedButton(
-                onPressed: activateLocation,
-                child: Text('Activar Ubicación Precisa'),
-              ),
-          ],
+          ),
         ),
-      ),
+        SizedBox(height: size.height * 0.025),
+        Text(
+          serviceStatus == ServiceStatus.disabled
+              ? 'Desactivado'
+              : serviceStatus == ServiceStatus.enabled
+                  ? 'Activado'
+                  : 'Desconocido',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            // fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildActionButton({
-    required VoidCallback onPressed,
-    required String label,
-  }) {
-    return TextButton(
-      onPressed: onPressed,
-      child: Text(label),
-      style: TextButton.styleFrom(
-        backgroundColor: Colors.blue,
-        foregroundColor: Color(0xffffffff),
-      ),
+  Widget buildButton(BuildContext context, IconData icon, String text,
+      String title, Size size) {
+    return Column(
+      children: [],
     );
   }
 }

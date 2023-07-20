@@ -8,9 +8,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+// import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tcontur_zone/auth/models/empresas_response.dart';
 import 'package:tcontur_zone/auth/models/user_response.dart';
-import 'package:http/http.dart' as http;
+// import 'package:http/http.dart' as http;
+// import 'package:tcontur_zone/provider/provider_empresa.dart';
 // import 'package:tcontur_zone/services/notification.dart';
 import 'package:tcontur_zone/services/service_location.dart';
 
@@ -38,7 +41,7 @@ Future<void> initNotifications() async {
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     myChanelId,
     myChanelName,
-    importance: Importance.low,
+    importance: Importance.high,
     enableVibration: false,
     playSound: false,
   );
@@ -51,7 +54,8 @@ Future<void> initNotifications() async {
 }
 
 Future<void> initializeServiceBackGround() async {
-  final service = FlutterBackgroundService();
+  final service =
+      FlutterBackgroundService(); // Default is ic_launcher from folder mipmap
   await initNotifications();
 
   await service.configure(
@@ -60,11 +64,11 @@ Future<void> initializeServiceBackGround() async {
           onStart: onStart,
           // auto start servic
           autoStart: false,
-          isForegroundMode: true, // default is false
+          isForegroundMode: false, // default is false
           notificationChannelId: myChanelId,
           initialNotificationTitle: 'Serivicio de zona activo',
           initialNotificationContent: 'Iniciando Servicio...',
-          foregroundServiceNotificationId: 999,
+          foregroundServiceNotificationId: 888,
           autoStartOnBoot: false),
       iosConfiguration: IosConfiguration());
 
@@ -74,9 +78,10 @@ Future<void> initializeServiceBackGround() async {
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
   // Only available for flutter 3.0.0 and later
+
   DartPluginRegistrant.ensureInitialized();
 
-  final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
+  // final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
@@ -99,46 +104,46 @@ void onStart(ServiceInstance service) async {
   service.on('stopService').listen((event) async {
     flutterLocalNotificationsPlugin.cancelAll();
     await flutterLocalNotificationsPlugin.show(
-      888,
+      8882,
       'Servicio finalizado',
       '¡Gracias por confiar en nosotros!',
       const NotificationDetails(
         android: AndroidNotificationDetails(myChanelId, 'MY FOREGROUND SERVICE',
-            priority: Priority.low, playSound: false, ongoing: false),
+            priority: Priority.max, playSound: true, ongoing: false),
       ),
     );
 
     service.stopSelf();
   });
-  Geolocator.checkPermission().asStream().listen((hasLocationPermission) {
-    print('hasLocationPermission 25: $hasLocationPermission');
-  });
-  Geolocator.getServiceStatusStream().listen((event) {
-    print('event 28: $event');
-  });
+  // Geolocator.checkPermission().asStream().listen((hasLocationPermission) {
+  //   print('hasLocationPermission 25: $hasLocationPermission');
+  // });
+  // Geolocator.getServiceStatusStream().listen((event) {
+  //   print('event 28: $event');
+  // });
 
-  Timer.periodic(const Duration(seconds: 30), (timer) async {
+  Timer.periodic(const Duration(seconds: 10), (timer) async {
     if (!isCounterRunning) {
       isCounterRunning = true;
     }
-
+    print('counter: $counter');
     counter++;
 
     if (service is AndroidServiceInstance) {
-      // if (await service.isForegroundService()) {
-      flutterLocalNotificationsPlugin.show(
-        888,
-        'SERVICE ZONE EJECUTÁNDOSE',
-        'Counter: $counter',
-        payload: 'este es mi contador zdddzdz: $counter',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(myChanelId, myChanelName,
-              priority: Priority.low,
-              playSound: false,
-              enableVibration: false,
-              ongoing: true),
-        ),
-      );
+      //   // if (await service.isForegroundService()) {
+      //   flutterLocalNotificationsPlugin.show(
+      //     8882,
+      //     'SERVICE ZONE EJECUTÁNDOSE',
+      //     'Counter: $counter',
+      //     payload: 'este es mi contador zdddzdz: $counter',
+      //     const NotificationDetails(
+      //       android: AndroidNotificationDetails(myChanelId, myChanelName,
+      //           priority: Priority.low,
+      //           playSound: false,
+      //           enableVibration: false,
+      //           ongoing: true),
+      //     ),
+      // );
 
       service.setForegroundNotificationInfo(
         title: "My App Service",
@@ -159,7 +164,7 @@ void onStart(ServiceInstance service) async {
         // Show a notification if the location permission has been revoked or the location services are disabled.
         if (!isLocationServiceEnabled) {
           flutterLocalNotificationsPlugin.show(
-            999,
+            9994,
             'Ubicación desactivada',
             'Por favor, active el servicio de ubicación.',
             const NotificationDetails(
@@ -187,6 +192,8 @@ void onStart(ServiceInstance service) async {
         }
       } else {
         // Get the current position and show it in a notification.
+        print('estamos cerca de donde se envía la ubicación');
+
         final Position position = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.high);
 //       //  LocationServiceUrbanito().sendLocationData(latitude, longitude, timestamp)
@@ -194,71 +201,78 @@ void onStart(ServiceInstance service) async {
         final timeStamp = getFormattedTimestamp();
 
         final prefs = await SharedPreferences.getInstance();
+        final empresa = prefs.getString('selectedEmpresa');
+
+        print('empresa 202: $empresa');
         final userJson = prefs.getString('user');
-        // if (userJson != null) {
-        //   final user = UserRes.fromJson(json.decode(userJson));
-        //   final token = user.token;
+        print('userJson 204: $userJson');
+        if (userJson != null && empresa != null) {
+          final user = UserRes.fromJson(json.decode(userJson));
+          final empresaFinal = EmpresaResponse.fromJson(json.decode(empresa));
+          final token = user.token;
 
-        //   print('token: $token');
-        //   print('position: $position');
-        //   print('timeStamp: $timeStamp');
-        //   await dotenv.load();
-        //   if (dotenv.env.containsKey('API_URL_LASFLORES')) {
-        //     // final apiUrl = dotenv.env['API_URL_LASFLORES'];
+          print(
+              '202 backgorund empresa:>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> $empresa');
+          print('token: $token');
+          print('position: $position');
+          print('timeStamp: $timeStamp');
+          await dotenv.load();
+          if (dotenv.env.containsKey('API_URL_GENERAL')) {
+            final apiUrl = dotenv.env['API_URL_GENERAL'];
 
-        //     final String urlFinal =
-        //         '${dotenv.env['API_URL_LASFLORES']}/api/inspecciones/update_position';
+            final String urlFinal =
+                'https://${empresaFinal.nombre}$apiUrl/api/inspecciones/update_position';
+            print('urlFinal: $urlFinal');
+            final response = await LocationServiceUrbanito().sendLocationData(
+                position.latitude,
+                position.longitude,
+                timeStamp,
+                token,
+                urlFinal);
 
-        //     final response = await LocationServiceUrbanito().sendLocationData(
-        //         position.latitude,
-        //         position.longitude,
-        //         timeStamp,
-        //         token!,
-        //         urlFinal);
-
-        //     final respuesta = json.decode(response.body);
-        //     if (response.statusCode == 200) {
-        //       flutterLocalNotificationsPlugin.show(
-        //         999,
-        //         'Ubicación enviada',
-        //         'Ubicación enviada $respuesta.',
-        //         payload: ' payload ok ddd $respuesta',
-        //         const NotificationDetails(
-        //           android: AndroidNotificationDetails(
-        //               priority: Priority.low,
-        //               progress: 100,
-        //               myChanelId,
-        //               myChanelName,
-        //               playSound: false,
-        //               ongoing: true),
-        //         ),
-        //       );
-        //     } else {
-        //       print('Error al enviar ubicación $respuesta');
-        //       flutterLocalNotificationsPlugin.show(
-        //         999,
-        //         'Error al enviar ubicación',
-        //         'Error al enviar ubicación.',
-        //         const NotificationDetails(
-        //           android: AndroidNotificationDetails(
-        //               priority: Priority.low,
-        //               progress: 100,
-        //               myChanelId,
-        //               myChanelName,
-        //               playSound: false,
-        //               ongoing: true),
-        //         ),
-        //       );
-        //     }
-        //   } else {
-        //     print(
-        //         'No se encontró la variable API_URL_URBANITO en el archivo .env.');
-        //   }
-        // } else {
-        //   // print('user 119: null');
-        //   // ir a login
-        //   FlutterBackgroundService().invoke('stopService');
-        // }
+            final respuesta = json.decode(response.body);
+            if (response.statusCode == 200) {
+              flutterLocalNotificationsPlugin.show(
+                9994,
+                'Ubicación enviada',
+                'Ubicación enviada $respuesta.',
+                payload: ' payload ok ddd $respuesta',
+                const NotificationDetails(
+                  android: AndroidNotificationDetails(
+                      priority: Priority.low,
+                      progress: 100,
+                      myChanelId,
+                      myChanelName,
+                      playSound: false,
+                      ongoing: true),
+                ),
+              );
+            } else {
+              print('Error al enviar ubicación $respuesta');
+              flutterLocalNotificationsPlugin.show(
+                9994,
+                'Error al enviar ubicación',
+                'Error al enviar ubicación.',
+                const NotificationDetails(
+                  android: AndroidNotificationDetails(
+                      priority: Priority.low,
+                      progress: 100,
+                      myChanelId,
+                      myChanelName,
+                      playSound: false,
+                      ongoing: true),
+                ),
+              );
+            }
+          } else {
+            print(
+                'No se encontró la variable API_URL_URBANITO en el archivo .env.');
+          }
+        } else {
+          // print('user 119: null');
+          // ir a login
+          FlutterBackgroundService().invoke('stopService');
+        }
 
         bool isLocationServiceEnabled =
             await Geolocator.isLocationServiceEnabled();
@@ -278,8 +292,8 @@ void onStart(ServiceInstance service) async {
         print(e);
         print('e 119: $e');
       }
-      // }
     }
+    // }
   });
 }
 
