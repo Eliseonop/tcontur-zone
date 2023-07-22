@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:tcontur_zone/auth/models/empresas_response.dart';
+import 'package:tcontur_zone/provider/provider_empresa.dart';
+import 'package:tcontur_zone/provider/provider_user.dart';
 import 'package:tcontur_zone/auth/service/auth_service.dart';
 import 'package:tcontur_zone/screens/home/home_screen.dart';
 
@@ -13,31 +17,52 @@ class LoginScreen extends StatefulWidget {
 class LoginScreenState extends State<LoginScreen> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
+  List<EmpresaResponse> empresas = [];
+  EmpresaResponse? empresaSelect;
   final AuthService authService = AuthService();
   bool isLoading = false;
 
+  late UserProvider userProvider;
+  late EmpresaProvider empresasProvider;
   void goToScreen(BuildContext context, Widget widget) {
     Navigator.of(context).pop();
+  }
+
+  @override
+  initState() {
+    super.initState();
+    userProvider = Provider.of<UserProvider>(context, listen: false);
+    empresasProvider = Provider.of<EmpresaProvider>(context, listen: false);
+    getEmpresas();
   }
 
   Future<void> login(BuildContext context) async {
     final username = usernameController.text;
     final password = passwordController.text;
+    // final empresaSelect = '1';
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     setState(() {
       isLoading = true;
     });
-
     try {
-      await authService.login(username, password);
-      if (!context.mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const HomeScreen(),
-        ),
-      );
+      if (empresaSelect == null) {
+        throw Exception('Debe seleccionar una empresa');
+      } else if (username.isEmpty || password.isEmpty) {
+        throw Exception('Debe ingresar usuario y contraseña');
+      } else if (empresaSelect?.nombre == null) {
+        throw Exception('Debe seleccionar una empresa');
+      } else {
+        String empresaLogin = empresaSelect?.nombre ?? '';
+        await userProvider.login(username, password, empresaLogin);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+        );
+      }
     } catch (error) {
       print('error 42 login' + error.toString());
       showDialog(
@@ -60,6 +85,14 @@ class LoginScreenState extends State<LoginScreen> {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> getEmpresas() async {
+    await empresasProvider.fetchEmpresas();
+    setState(() {
+      empresas = empresasProvider.empresas;
+    });
+    print('Empresas: ${empresas.map((e) => e.nombre)}');
   }
 
   Widget buildUsername() {
@@ -140,7 +173,7 @@ class LoginScreenState extends State<LoginScreen> {
           height: 50,
           child: TextFormField(
             controller: passwordController,
-            keyboardType: TextInputType.emailAddress,
+            keyboardType: TextInputType.visiblePassword,
             style: const TextStyle(
               color: Colors.black87,
             ),
@@ -162,12 +195,12 @@ class LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget buildLoginButton(BuildContext context) {
+  Widget buildLoginButton(BuildContext context, bool isEnabled) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 25),
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: isLoading ? null : () => login(context),
+        onPressed: isLoading || !isEnabled ? null : () => login(context),
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
@@ -193,6 +226,8 @@ class LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEmpresaSelected = empresaSelect != null;
+
     return Scaffold(
       backgroundColor: const Color(0xff2d3e50),
       body: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -228,12 +263,28 @@ class LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset('assets/images/logo.png', width: 560),
+                    // const SizedBox(height: 20),
+                    EmpresaDropdown(
+                      empresas: empresas,
+                      selectedEmpresa: empresaSelect,
+                      onChanged: (newValue) {
+                        final empresaProvider = Provider.of<EmpresaProvider>(
+                            context,
+                            listen: false);
+                        print(
+                            'Empresa: ${empresaProvider.empresaSelect?.nombre}');
+                        empresaProvider.setEmpresaSelect(newValue);
+                        setState(() {
+                          // Update the local variable to reflect the change
+                          empresaSelect = newValue;
+                        });
+                      },
+                    ),
                     const SizedBox(height: 20),
-                    const SizedBox(height: 30),
                     buildUsername(),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
                     buildPassword(),
-                    buildLoginButton(context),
+                    buildLoginButton(context, isEmpresaSelected ? true : false),
                   ],
                 ),
               ),
@@ -241,6 +292,85 @@ class LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class EmpresaDropdown extends StatelessWidget {
+  final List<EmpresaResponse> empresas;
+  final EmpresaResponse? selectedEmpresa;
+  final Function(EmpresaResponse?) onChanged;
+
+  const EmpresaDropdown({
+    super.key,
+    required this.empresas,
+    required this.selectedEmpresa,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Empresa',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          alignment: Alignment.centerLeft,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: DropdownButtonFormField<EmpresaResponse>(
+            dropdownColor: Colors.white,
+            value: selectedEmpresa,
+            icon: Icon(Icons.arrow_drop_down),
+            iconSize: 20,
+            elevation: 10,
+            onChanged: onChanged,
+            items: empresas.map<DropdownMenuItem<EmpresaResponse>>(
+              (value) {
+                return DropdownMenuItem<EmpresaResponse>(
+                  value: value,
+                  child: Text(
+                    value.nombre,
+                    style: TextStyle(color: Colors.black87),
+                  ),
+                );
+              },
+            ).toList(),
+            decoration: InputDecoration(
+              hintText: 'Empresa',
+              hintStyle: TextStyle(color: Colors.black38),
+              border: InputBorder.none,
+              prefixIcon: Icon(
+                Icons.business,
+                color: Color(0x990066a9),
+              ),
+              contentPadding: EdgeInsets.symmetric(vertical: 14),
+            ),
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

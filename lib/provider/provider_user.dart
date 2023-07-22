@@ -1,17 +1,25 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'package:tcontur_zone/auth/models/user_response.dart';
 
-class AuthService {
-  String? urlApi = dotenv.env['API_URL_LASFLORES'];
+class UserProvider extends ChangeNotifier {
+  String? urlApi = dotenv.env['API_URL_GENERAL'];
+
   UserRes? _user;
 
   UserRes? get user => _user;
 
-  Future<void> login(String username, String password) async {
-    String url = '${urlApi!}/api/token-auth';
+  void setUser(UserRes user) {
+    _user = user;
+    notifyListeners();
+  }
+
+  Future<void> login(String username, String password, String empresa) async {
+    String url = 'https://$empresa${urlApi!}/api/token-auth';
 
     final response = await http.post(
       Uri.parse(url),
@@ -37,23 +45,24 @@ class AuthService {
     }
   }
 
-  Future<void> logout() async {
+  Future<void> checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('user');
-    _user = null;
-  }
+    final userData = prefs.getString('user');
 
-  Future<void> checkAuthStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userJson = prefs.getString('user');
-
-    if (userJson != null) {
-      _user = UserRes.fromJson(json.decode(userJson));
+    if (userData != null) {
+      final userJson = json.decode(userData);
+      _user = UserRes.fromJson(userJson);
     }
+
+    notifyListeners();
   }
 
-  bool isAuthenticated() {
-    return _user != null;
+  Future<void> logout() async {
+    _user = null;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user');
+
+    notifyListeners();
   }
 }
