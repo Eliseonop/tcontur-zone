@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
+// import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -122,7 +123,7 @@ void onStart(ServiceInstance service) async {
   //   print('event 28: $event');
   // });
 
-  Timer.periodic(const Duration(seconds: 10), (timer) async {
+  Timer.periodic(const Duration(seconds: 20), (timer) async {
     if (!isCounterRunning) {
       isCounterRunning = true;
     }
@@ -180,6 +181,7 @@ void onStart(ServiceInstance service) async {
               'Por favor, otorgue los permisos necesarios.',
               const NotificationDetails(
                 android: AndroidNotificationDetails(
+                    actions: [AndroidNotificationAction('Abrir', 'action')],
                     priority: Priority.low,
                     progress: 100,
                     myChanelId,
@@ -255,12 +257,12 @@ void onStart(ServiceInstance service) async {
                 'Error al enviar ubicación.',
                 const NotificationDetails(
                   android: AndroidNotificationDetails(
-                      priority: Priority.low,
+                      priority: Priority.high,
                       progress: 100,
                       myChanelId,
                       myChanelName,
                       playSound: false,
-                      ongoing: true),
+                      ongoing: false),
                 ),
               );
             }

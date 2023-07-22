@@ -128,34 +128,71 @@ class GeolocatorAppState extends State<GeolocatorApp> {
           // ),
           const SizedBox(height: 20.0),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            // verticalDirection: VerticalDirection.down,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _buildPermissionsCard(size),
-              _buildServiceStatusCard(size),
+              _buildServiceStatusLocationCard(size),
             ],
           ),
-          SizedBox(height: 20.0),
-          SizedBox(height: 20.0),
-          if (_isServiceRunning)
-            TextButton(
-              onPressed: _stopService,
-              child: const Icon(Icons.pause),
-              style: TextButton.styleFrom(
-                  // backgroundColor: Colors.yellow,
-                  foregroundColor: Color(0xffffffff),
-                  iconColor: Colors.yellow),
-            ),
-          if (!_isServiceRunning)
-            TextButton(
-              onPressed: _startService,
-              child: const Icon(Icons.play_arrow),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.green,
-                iconColor: Color(0xffffffff),
-              ),
-            ),
+          const SizedBox(height: 30.0),
+
+          const SizedBox(height: 20.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildServiceStatusCard(size),
+
+              // botones en coluna para
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildServiceStatusCard(Size size) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () {
+            _isServiceRunning ? _stopService() : _startService();
+          },
+          child: Container(
+            height: size.height * 0.125,
+            width: size.width * 0.23,
+            decoration: BoxDecoration(
+              color:
+                  _isServiceRunning ? Colors.greenAccent : Colors.blueGrey[600],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                // BoxShadow(
+                //   color: Colors.grey.shade100,
+                //   blurRadius: 30,
+                //   offset: Offset(5, 5),
+                // ),
+              ],
+            ),
+            child: Icon(
+              _isServiceRunning ? Icons.play_arrow : Icons.pause,
+              color: Colors.black,
+              size: 45,
+            ),
+          ),
+        ),
+        SizedBox(height: size.height * 0.025),
+        Text(
+          _isServiceRunning ? 'Corriendo' : 'Detenido',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            // fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 
@@ -163,6 +200,15 @@ class GeolocatorAppState extends State<GeolocatorApp> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
+        Text(
+          'Permisos de ubicación',
+          style: TextStyle(
+            color: Colors.white,
+            // fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: size.height * 0.025),
         GestureDetector(
           onTap: () {
             requestPermission();
@@ -190,7 +236,10 @@ class GeolocatorAppState extends State<GeolocatorApp> {
               ],
             ),
             child: Icon(
-              Icons.location_on,
+              permission == LocationPermission.denied ||
+                      permission == LocationPermission.deniedForever
+                  ? Icons.location_disabled
+                  : Icons.location_on,
               color: Colors.black,
               size: 45,
             ),
@@ -217,9 +266,18 @@ class GeolocatorAppState extends State<GeolocatorApp> {
     );
   }
 
-  Widget _buildServiceStatusCard(Size size) {
+  Widget _buildServiceStatusLocationCard(Size size) {
     return Column(
       children: [
+        Text(
+          'Servicio de ubicación',
+          style: TextStyle(
+            color: Colors.white,
+            // fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: size.height * 0.025),
         GestureDetector(
           onTap: () {
             // requestPermission();
