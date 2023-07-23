@@ -123,7 +123,7 @@ void onStart(ServiceInstance service) async {
   //   print('event 28: $event');
   // });
 
-  Timer.periodic(const Duration(seconds: 20), (timer) async {
+  Timer.periodic(const Duration(minutes: 2), (timer) async {
     if (!isCounterRunning) {
       isCounterRunning = true;
     }
