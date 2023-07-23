@@ -169,6 +169,19 @@ class GeolocatorAppState extends State<GeolocatorApp> {
                   _isServiceRunning ? Colors.greenAccent : Colors.blueGrey[600],
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
+                if (_isServiceRunning)
+                  BoxShadow(
+                    color: Colors.greenAccent,
+                    blurRadius: 30,
+                    offset: Offset(5, 5),
+                  ),
+                if (!_isServiceRunning)
+                  BoxShadow(
+                    color: Colors.blueGrey[600]!,
+                    blurRadius: 30,
+                    offset: Offset(5, 5),
+                  ),
+
                 // BoxShadow(
                 //   color: Colors.grey.shade100,
                 //   blurRadius: 30,
@@ -228,6 +241,21 @@ class GeolocatorAppState extends State<GeolocatorApp> {
                               : Colors.grey.shade400,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
+                if (permission == LocationPermission.denied ||
+                    permission == LocationPermission.deniedForever)
+                  BoxShadow(
+                    color: Colors.red,
+                    blurRadius: 30,
+                    offset: Offset(5, 5),
+                  ),
+                if (permission == LocationPermission.whileInUse ||
+                    permission == LocationPermission.always)
+                  BoxShadow(
+                    color: Colors.greenAccent,
+                    blurRadius: 30,
+                    offset: Offset(5, 5),
+                  ),
+
                 // BoxShadow(
                 //   color: Colors.grey.shade100,
                 //   blurRadius: 30,
@@ -294,6 +322,18 @@ class GeolocatorAppState extends State<GeolocatorApp> {
                       : Colors.grey.shade400,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
+                if (serviceStatus == ServiceStatus.disabled)
+                  BoxShadow(
+                    color: Colors.red,
+                    blurRadius: 30,
+                    offset: Offset(5, 5),
+                  ),
+                if (serviceStatus == ServiceStatus.enabled)
+                  BoxShadow(
+                    color: Colors.greenAccent,
+                    blurRadius: 30,
+                    offset: Offset(5, 5),
+                  ),
                 // BoxShadow(
                 //   color: Colors.grey.shade100,
                 //   blurRadius: 30,
