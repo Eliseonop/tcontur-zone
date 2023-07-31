@@ -5,7 +5,7 @@ import 'package:tcontur_zone/provider/provider_user.dart';
 import 'package:tcontur_zone/provider/provider_page.dart';
 // import 'package:tcontur_zone/screens/home/pages/location/forent_component.dart';
 // import 'package:tcontur_zone/screens/home/pages/location/test_bg_fetch.dart';
-import 'package:tcontur_zone/screens/home/pages/location/test_location.dart';
+import 'package:tcontur_zone/screens/home/pages/location/location_component.dart';
 // import 'package:tcontur_zone/screens/home/pages/location/location_page.dart';
 import 'package:tcontur_zone/screens/home/pages/drawer/my_drawer.dart';
 import 'package:tcontur_zone/screens/home/pages/web/my-webview.dart';

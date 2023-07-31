@@ -13,9 +13,14 @@ class MyDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user; // Obtener el usuario del provider
+    final pageProvider = Provider.of<PageProvider>(context);
+
+    void setPage(DrawerSections page) {
+      pageProvider.setCurrentPage(page);
+      Navigator.pop(context);
+    }
 
     Future<void> logout(BuildContext context) async {
-      // Llamar al método de logout en el provider
       FlutterBackgroundService().invoke('stopService');
       await userProvider.logout();
       Navigator.of(context).push(
@@ -23,13 +28,6 @@ class MyDrawer extends StatelessWidget {
           builder: (context) => const LoginScreen(),
         ),
       );
-    }
-
-    final pageProvider = Provider.of<PageProvider>(context);
-
-    void setPage(DrawerSections page) {
-      pageProvider.setCurrentPage(page);
-      Navigator.pop(context);
     }
 
     return Drawer(
@@ -42,8 +40,20 @@ class MyDrawer extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             ),
-            accountName: Text(user?.nombre ?? ''),
-            accountEmail: Text(user?.email ?? ''),
+            accountName: Text(
+              user?.nombre ?? '',
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: Colors.white),
+            ),
+            accountEmail: Text(
+              user?.email ?? '',
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: Colors.white),
+            ),
             currentAccountPicture: const CircleAvatar(
               backgroundColor: Colors.transparent,
               child: ClipOval(

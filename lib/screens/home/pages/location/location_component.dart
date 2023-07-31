@@ -83,7 +83,7 @@ class GeolocatorAppState extends State<GeolocatorApp> {
 
   Future<void> activateLocation() async {
     await Geolocator.openLocationSettings();
-    await checkServiceLocationStatus();
+    // await checkServiceLocationStatus();
   }
 
   Future<void> checkServiceBackgroundStatus() async {

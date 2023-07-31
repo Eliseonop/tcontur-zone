@@ -1,5 +1,3 @@
-// import 'dart:convert';
-
 class EmpresaResponse {
   int id;
   String codigo;
@@ -25,5 +23,15 @@ class EmpresaResponse {
       'codigo': codigo,
       'nombre': nombre,
     };
+  }
+
+  String getNameNotSpace() {
+    // Remover espacios al inicio y al final del nombre
+    String nombreSinEspacios = nombre.trim();
+
+    // Remover espacios en el medio del nombre
+    nombreSinEspacios = nombreSinEspacios.replaceAll(' ', '');
+
+    return nombreSinEspacios;
   }
 }

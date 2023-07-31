@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:tcontur_zone/auth/models/empresas_response.dart';
 import 'package:tcontur_zone/provider/provider_empresa.dart';
+import 'package:tcontur_zone/provider/provider_page.dart';
 import 'package:tcontur_zone/provider/provider_user.dart';
 import 'package:tcontur_zone/auth/service/auth_service.dart';
 import 'package:tcontur_zone/screens/home/home_screen.dart';
@@ -24,6 +25,7 @@ class LoginScreenState extends State<LoginScreen> {
 
   late UserProvider userProvider;
   late EmpresaProvider empresasProvider;
+  late PageProvider pageProvider;
   void goToScreen(BuildContext context, Widget widget) {
     Navigator.of(context).pop();
   }
@@ -54,7 +56,8 @@ class LoginScreenState extends State<LoginScreen> {
       } else if (empresaSelect?.nombre == null) {
         throw Exception('Debe seleccionar una empresa');
       } else {
-        String empresaLogin = empresaSelect?.nombre ?? '';
+        String empresaLogin = empresaSelect?.getNameNotSpace() ?? '';
+
         await userProvider.login(username, password, empresaLogin);
         Navigator.pushReplacement(
           context,
@@ -271,8 +274,10 @@ class LoginScreenState extends State<LoginScreen> {
                         final empresaProvider = Provider.of<EmpresaProvider>(
                             context,
                             listen: false);
-                        print(
-                            'Empresa: ${empresaProvider.empresaSelect?.nombre}');
+                        final nameData = empresaProvider.getSelectedEmpresa();
+                        print('Empresa: $nameData');
+                        // print(
+                        //     'Empresa: ${empresaProvider.empresaSelect?.nombre}');
                         empresaProvider.setEmpresaSelect(newValue);
                         setState(() {
                           // Update the local variable to reflect the change
