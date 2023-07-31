@@ -12,7 +12,20 @@ class EmpresaProvider extends ChangeNotifier {
   EmpresaResponse? _empresaSelect;
 
   List<EmpresaResponse> get empresas => _empresas;
-  EmpresaResponse? get empresaSelect => _empresaSelect;
+  Future<EmpresaResponse?> getSelectedEmpresa() async {
+    // Verifica si hay una empresa seleccionada guardada en las preferencias compartidas.
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? empresaJson = prefs.getString(_selectedEmpresaKey);
+
+    if (empresaJson != null) {
+      Map<String, dynamic> empresaData = jsonDecode(empresaJson);
+      _empresaSelect = EmpresaResponse.fromJson(empresaData);
+      notifyListeners();
+      return _empresaSelect;
+    } else {
+      return null;
+    }
+  }
 
   // 2. Define la clave única para identificar la empresa seleccionada en las preferencias compartidas.
   static const String _selectedEmpresaKey = 'selectedEmpresa';

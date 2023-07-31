@@ -223,7 +223,7 @@ void onStart(ServiceInstance service) async {
             final apiUrl = dotenv.env['API_URL_GENERAL'];
 
             final String urlFinal =
-                'https://${empresaFinal.nombre}$apiUrl/api/inspecciones/update_position';
+                'https://${empresaFinal.getNameNotSpace()}$apiUrl/api/inspecciones/update_position';
             print('urlFinal: $urlFinal');
             final response = await LocationServiceUrbanito().sendLocationData(
                 position.latitude,
