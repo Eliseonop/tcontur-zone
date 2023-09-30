@@ -67,7 +67,7 @@ Future<void> initializeServiceBackGround() async {
           autoStart: false,
           isForegroundMode: false, // default is false
           notificationChannelId: myChanelId,
-          initialNotificationTitle: 'Serivicio de zona activo',
+          initialNotificationTitle: 'Servicio de zona activo',
           initialNotificationContent: 'Iniciando Servicio...',
           foregroundServiceNotificationId: 888,
           autoStartOnBoot: false),
@@ -147,7 +147,7 @@ void onStart(ServiceInstance service) async {
       // );
 
       service.setForegroundNotificationInfo(
-        title: "My App Service",
+        title: "Servicio de zona activo",
         content: "Updated at ${DateTime.now()}",
       );
       // Check the location permission status and the location services status.

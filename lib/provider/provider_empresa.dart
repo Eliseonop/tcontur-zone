@@ -5,8 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart'; // 1. Importa el paquete shared_preferences.
 import 'package:tcontur_zone/auth/models/empresas_response.dart';
 
+
+
 class EmpresaProvider extends ChangeNotifier {
-  String? apiUrl = dotenv.env['API_URL_URBANITO'];
+  String apiUrl = dotenv.get('API_URL_URBANITO',fallback: "");
 
   List<EmpresaResponse> _empresas = [];
   EmpresaResponse? _empresaSelect;

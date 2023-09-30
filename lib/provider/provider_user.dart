@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:tcontur_zone/auth/models/user_response.dart';
 
 class UserProvider extends ChangeNotifier {
-  String? urlApi = dotenv.env['API_URL_GENERAL'];
+  String urlApi = dotenv.get('API_URL_GENERAL',fallback: '');
 
   UserRes? _user;
 
